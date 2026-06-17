@@ -1,0 +1,29 @@
+@startuml Admin
+title Admin Use Case Diagram - CEMS v1.0
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor Admin
+
+rectangle "Classroom Equipment Management System (CEMS)" {
+  usecase "Log In" as UC_LogIn
+  usecase "Manage User Account" as UC_ManageUser
+  usecase "Create Lecturer Account" as UC_CreateLecturer
+  usecase "Create Technician Account" as UC_CreateTechnician
+  usecase "Manage Room" as UC_ManageRoom
+  usecase "Manage Equipment Category" as UC_ManageCategory
+  usecase "View Dashboard" as UC_ViewDashboard
+  usecase "Approve Equipment Disposal" as UC_ApproveDisposal
+}
+
+Admin --> UC_LogIn
+Admin --> UC_ManageUser
+Admin --> UC_CreateLecturer
+Admin --> UC_CreateTechnician
+Admin --> UC_ManageRoom
+Admin --> UC_ManageCategory
+Admin --> UC_ViewDashboard
+Admin --> UC_ApproveDisposal
+
+@enduml

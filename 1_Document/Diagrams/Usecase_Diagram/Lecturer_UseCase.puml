@@ -1,0 +1,28 @@
+@startuml Lecturer
+title Lecturer Use Case Diagram - CEMS v1.0
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor Lecturer
+
+rectangle "Classroom Equipment Management System (CEMS)" {
+  usecase "Log In" as UC_LogIn
+  usecase "View Room Equipment" as UC_ViewRoomEquipment
+  usecase "Submit Incident Report" as UC_SubmitIncident
+  usecase "Track Incident Report" as UC_TrackIncident
+  usecase "Send Notification" as UC_SendNotification
+}
+
+Lecturer --> UC_LogIn
+Lecturer --> UC_ViewRoomEquipment
+Lecturer --> UC_SubmitIncident
+Lecturer --> UC_TrackIncident
+
+UC_SubmitIncident ..> UC_SendNotification : <<include>>
+note right of (UC_SendNotification)
+  Automatically notify technician
+  about new incident
+end note
+
+@enduml

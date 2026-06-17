@@ -1,0 +1,41 @@
+@startuml Technician
+title Technician Use Case Diagram - CEMS v1.0
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor Technician
+
+rectangle "Classroom Equipment Management System (CEMS)" {
+  usecase "Log In" as UC_LogIn
+  usecase "Add/Update Equipment" as UC_ManageEquipment
+  usecase "Propose Equipment Disposal" as UC_ProposeDisposal
+  usecase "Manage Equipment Location" as UC_ManageLocation
+  usecase "Process Incident Report" as UC_ProcessIncident
+  usecase "Create Maintenance Ticket" as UC_CreateTicket
+  usecase "View Equipment History" as UC_ViewHistory
+  usecase "Export Equipment Report" as UC_ExportReport
+  usecase "Send Notification" as UC_SendNotification
+}
+
+Technician --> UC_LogIn
+Technician --> UC_ManageEquipment
+Technician --> UC_ProposeDisposal
+Technician --> UC_ManageLocation
+Technician --> UC_ProcessIncident
+Technician --> UC_ViewHistory
+Technician --> UC_ExportReport
+
+UC_ProcessIncident ..> UC_SendNotification : <<include>>
+note right of (UC_SendNotification)
+  Automatically notify lecturer
+  when incident is resolved
+end note
+
+UC_CreateTicket .> UC_ProcessIncident : <<extend>>
+note right of (UC_CreateTicket)
+  Condition: Equipment
+  requires repair/maintenance
+end note
+
+@enduml
