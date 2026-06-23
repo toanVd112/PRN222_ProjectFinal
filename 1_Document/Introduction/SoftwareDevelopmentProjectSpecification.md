@@ -58,7 +58,9 @@ Ba nhóm người dùng chính tương tác với hệ thống:
 - Theo dõi trạng thái xử lý báo cáo mình đã gửi
 
 **Nhóm chức năng chung của hệ thống:**
-- Đăng nhập/đăng ký, quản lý phiên làm việc theo vai trò (Authentication/Authorization)
+- Đăng nhập, quản lý phiên làm việc theo vai trò (Authentication/Authorization)
+- Quản lý hồ sơ cá nhân (Manage Personal Profile) - xem và cập nhật thông tin cá nhân cơ bản
+- Đổi mật khẩu (Change Password) và Quên mật khẩu (Forgot Password)
 - Thông báo (email hoặc thông báo trong hệ thống) khi báo cáo được xử lý, khi thiết bị gần hết bảo hành
 - Tìm kiếm, lọc thiết bị theo nhiều tiêu chí (phòng, loại, tình trạng, ngày nhập)
 - Xuất báo cáo (Excel/PDF) cho kiểm kê hoặc báo cáo định kỳ
@@ -108,15 +110,15 @@ Xây dựng một hệ thống quản lý thiết bị phòng học tập trung,
 ### 6.1. Use Case theo Actor
 
 **Admin:**
-- Đăng nhập hệ thống
-- Quản lý tài khoản người dùng (thêm, sửa, khóa, phân quyền)
+- Đăng nhập hệ thống, Quản lý hồ sơ cá nhân, Đổi/Quên mật khẩu
+- Quản lý tài khoản người dùng (bao gồm xem danh sách, thêm mới, chỉnh sửa, khóa/xóa tài khoản và phân quyền)
 - Quản lý danh mục phòng học
 - Quản lý danh mục loại thiết bị
 - Xem dashboard/báo cáo thống kê tổng thể
 - Phê duyệt thanh lý thiết bị
 
 **Technician (Nhân viên quản lý thiết bị):**
-- Đăng nhập hệ thống
+- Đăng nhập hệ thống, Quản lý hồ sơ cá nhân, Đổi/Quên mật khẩu
 - Quản lý thông tin thiết bị (thêm, sửa, đề xuất thanh lý)
 - Gán thiết bị vào phòng học lần đầu
 - Điều chuyển thiết bị giữa các phòng
@@ -127,13 +129,16 @@ Xây dựng một hệ thống quản lý thiết bị phòng học tập trung,
 - Tìm kiếm, lọc, xuất báo cáo thiết bị
 
 **Lecturer (Giảng viên):**
-- Đăng nhập hệ thống
+- Đăng nhập hệ thống, Quản lý hồ sơ cá nhân, Đổi/Quên mật khẩu
 - Xem danh sách và tình trạng thiết bị trong phòng học
 - Gửi báo cáo sự cố/thiết bị hỏng
 - Theo dõi trạng thái xử lý báo cáo đã gửi
 
 ### 6.2. Quan hệ Include/Extend giữa các Use Case
 
+- "Quản lý hồ sơ cá nhân" **extend** "Đổi mật khẩu" (người dùng truy cập trang đổi mật khẩu từ màn hình thông tin cá nhân)
+- "Quản lý tài khoản người dùng" **extend** "Tạo tài khoản Giảng viên", "Tạo tài khoản Technician", "Xem chi tiết tài khoản", "Cập nhật tài khoản", "Khóa/Xóa tài khoản"
+- "Quên mật khẩu" **include** "Gửi thông báo" (gửi email liên kết đặt lại mật khẩu)
 - "Gửi báo cáo sự cố" **include** "Gửi thông báo" (tự động thông báo cho nhân viên quản lý thiết bị khi có báo cáo mới)
 - "Xử lý báo cáo sự cố" **include** "Gửi thông báo" (thông báo lại cho giảng viên khi xử lý xong)
 - "Xử lý báo cáo sự cố" **extend** "Lập phiếu bảo trì/sửa chữa" (chỉ xảy ra trong nhánh điều kiện cần sửa chữa, không phải mọi báo cáo đều cần lập phiếu)

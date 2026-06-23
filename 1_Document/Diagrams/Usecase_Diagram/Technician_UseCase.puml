@@ -8,6 +8,9 @@ actor Technician
 
 rectangle "Classroom Equipment Management System (CEMS)" {
   usecase "Log In" as UC_LogIn
+  usecase "Change Password" as UC_ChangePassword
+  usecase "Forgot Password" as UC_ForgotPassword
+  usecase "Manage Personal Profile" as UC_ManageProfile
   usecase "Add/Update Equipment" as UC_ManageEquipment
   usecase "Propose Equipment Disposal" as UC_ProposeDisposal
   usecase "Manage Equipment Location" as UC_ManageLocation
@@ -19,12 +22,16 @@ rectangle "Classroom Equipment Management System (CEMS)" {
 }
 
 Technician --> UC_LogIn
+Technician --> UC_ManageProfile
+Technician --> UC_ForgotPassword
 Technician --> UC_ManageEquipment
 Technician --> UC_ProposeDisposal
 Technician --> UC_ManageLocation
 Technician --> UC_ProcessIncident
 Technician --> UC_ViewHistory
 Technician --> UC_ExportReport
+
+UC_ChangePassword ..> UC_ManageProfile : <<extend>>
 
 UC_ProcessIncident ..> UC_SendNotification : <<include>>
 note right of (UC_SendNotification)
@@ -37,5 +44,7 @@ note right of (UC_CreateTicket)
   Condition: Equipment
   requires repair/maintenance
 end note
+
+UC_ForgotPassword ..> UC_SendNotification : <<include>>
 
 @enduml

@@ -8,6 +8,9 @@ actor Lecturer
 
 rectangle "Classroom Equipment Management System (CEMS)" {
   usecase "Log In" as UC_LogIn
+  usecase "Change Password" as UC_ChangePassword
+  usecase "Forgot Password" as UC_ForgotPassword
+  usecase "Manage Personal Profile" as UC_ManageProfile
   usecase "View Room Equipment" as UC_ViewRoomEquipment
   usecase "Submit Incident Report" as UC_SubmitIncident
   usecase "Track Incident Report" as UC_TrackIncident
@@ -15,14 +18,20 @@ rectangle "Classroom Equipment Management System (CEMS)" {
 }
 
 Lecturer --> UC_LogIn
+Lecturer --> UC_ManageProfile
+Lecturer --> UC_ForgotPassword
 Lecturer --> UC_ViewRoomEquipment
 Lecturer --> UC_SubmitIncident
 Lecturer --> UC_TrackIncident
+
+UC_ChangePassword ..> UC_ManageProfile : <<extend>>
 
 UC_SubmitIncident ..> UC_SendNotification : <<include>>
 note right of (UC_SendNotification)
   Automatically notify technician
   about new incident
 end note
+
+UC_ForgotPassword ..> UC_SendNotification : <<include>>
 
 @enduml

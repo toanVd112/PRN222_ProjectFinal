@@ -8,22 +8,38 @@ actor Admin
 
 rectangle "Classroom Equipment Management System (CEMS)" {
   usecase "Log In" as UC_LogIn
+  usecase "Change Password" as UC_ChangePassword
+  usecase "Forgot Password" as UC_ForgotPassword
+  usecase "Manage Personal Profile" as UC_ManageProfile
   usecase "Manage User Account" as UC_ManageUser
   usecase "Create Lecturer Account" as UC_CreateLecturer
   usecase "Create Technician Account" as UC_CreateTechnician
+  usecase "View User Account" as UC_ViewUser
+  usecase "Update User Account" as UC_UpdateUser
+  usecase "Delete User Account" as UC_DeleteUser
   usecase "Manage Room" as UC_ManageRoom
   usecase "Manage Equipment Category" as UC_ManageCategory
   usecase "View Dashboard" as UC_ViewDashboard
   usecase "Approve Equipment Disposal" as UC_ApproveDisposal
+  usecase "Send Notification" as UC_SendNotification
 }
 
 Admin --> UC_LogIn
+Admin --> UC_ManageProfile
+Admin --> UC_ForgotPassword
 Admin --> UC_ManageUser
-Admin --> UC_CreateLecturer
-Admin --> UC_CreateTechnician
 Admin --> UC_ManageRoom
 Admin --> UC_ManageCategory
 Admin --> UC_ViewDashboard
 Admin --> UC_ApproveDisposal
+
+UC_ChangePassword ..> UC_ManageProfile : <<extend>>
+UC_CreateLecturer ..> UC_ManageUser : <<extend>>
+UC_CreateTechnician ..> UC_ManageUser : <<extend>>
+UC_ViewUser ..> UC_ManageUser : <<extend>>
+UC_UpdateUser ..> UC_ManageUser : <<extend>>
+UC_DeleteUser ..> UC_ManageUser : <<extend>>
+
+UC_ForgotPassword ..> UC_SendNotification : <<include>>
 
 @enduml
