@@ -1,0 +1,368 @@
+@startuml CEMS_Physical_ERD
+title Classroom Equipment Management System (CEMS)\nPhysical Entity Relationship Diagram — SQL Server\nv1.0 | 2026-06-23
+
+hide circle
+hide empty methods
+skinparam linetype ortho
+
+skinparam class {
+    BackgroundColor          #FAFAFA
+    BorderColor              #4A4A6A
+    HeaderBackgroundColor    #2C3E6B
+    HeaderFontColor          #FFFFFF
+    HeaderFontSize           13
+    FontSize                 11
+    FontName                 "Segoe UI"
+    ArrowColor               #4A4A6A
+    ArrowThickness           1.5
+}
+
+skinparam note {
+    BackgroundColor #FFF9E6
+    BorderColor     #E0C060
+    FontSize        10
+}
+
+' ============================================================
+'  TABLE: Users
+' ============================================================
+entity "**Users**" as Users {
+    + UserID          : INT <<PK, IDENTITY>>
+    --
+    UserCode          : NVARCHAR(20)  <<NOT NULL, UNIQUE>>
+    FullName          : NVARCHAR(150) <<NOT NULL>>
+    Email             : NVARCHAR(256) <<NOT NULL, UNIQUE>>
+    PasswordHash      : NVARCHAR(256) <<NOT NULL>>
+    PhoneNumber       : NVARCHAR(20)  <<NULL>>
+    AvatarUrl         : NVARCHAR(500) <<NULL>>
+    Role              : NVARCHAR(20)  <<NOT NULL>>
+    IsActive          : BIT           <<NOT NULL, DEFAULT 1>>
+    CreatedAt         : DATETIME2(0)  <<NOT NULL, DEFAULT NOW>>
+    UpdatedAt         : DATETIME2(0)  <<NULL>>
+    LastLoginAt       : DATETIME2(0)  <<NULL>>
+    FailedLoginCount  : INT           <<NOT NULL, DEFAULT 0>>
+    LockoutUntil      : DATETIME2(0)  <<NULL>>
+}
+
+note right of Users
+  CHK: Role IN ('Admin',
+  'Technician', 'Lecturer')
+  ---
+  Single Table Inheritance
+  cho 3 actor hệ thống
+end note
+
+' ============================================================
+'  TABLE: Rooms
+' ============================================================
+entity "**Rooms**" as Rooms {
+    + RoomID    : INT <<PK, IDENTITY>>
+    --
+    RoomCode   : NVARCHAR(20)  <<NOT NULL, UNIQUE>>
+    RoomName   : NVARCHAR(150) <<NOT NULL>>
+    Location   : NVARCHAR(200) <<NULL>>
+    Capacity   : INT           <<NULL>>
+    RoomType   : NVARCHAR(50)  <<NULL>>
+    IsActive   : BIT           <<NOT NULL, DEFAULT 1>>
+    CreatedAt  : DATETIME2(0)  <<NOT NULL>>
+}
+
+note right of Rooms
+  CHK: Capacity > 0
+  CHK: RoomType IN (
+    'Lý thuyết', 'Thực hành',
+    'Hội trường', 'Khác')
+end note
+
+' ============================================================
+'  TABLE: EquipmentCategories
+' ============================================================
+entity "**EquipmentCategories**" as EquipmentCategories {
+    + CategoryID    : INT <<PK, IDENTITY>>
+    --
+    CategoryName   : NVARCHAR(150) <<NOT NULL, UNIQUE>>
+    Description    : NVARCHAR(MAX) <<NULL>>
+    CreatedAt      : DATETIME2(0)  <<NOT NULL>>
+}
+
+' ============================================================
+'  TABLE: Equipments
+' ============================================================
+entity "**Equipments**" as Equipments {
+    + EquipmentID    : INT <<PK, IDENTITY>>
+    --
+    AssetCode        : NVARCHAR(50)  <<NOT NULL, UNIQUE>>
+    EquipmentName    : NVARCHAR(150) <<NOT NULL>>
+    # CategoryID     : INT <<FK → EquipmentCategories>>
+    # CurrentRoomID  : INT <<FK → Rooms, NULL>>
+    SerialNumber     : NVARCHAR(100) <<NULL>>
+    Manufacturer     : NVARCHAR(150) <<NULL>>
+    Supplier         : NVARCHAR(150) <<NULL>>
+    PurchaseDate     : DATE          <<NULL>>
+    WarrantyExpiry   : DATE          <<NULL>>
+    Status           : NVARCHAR(30)  <<NOT NULL, DEFAULT 'InUse'>>
+    Notes            : NVARCHAR(MAX) <<NULL>>
+    # CreatedBy      : INT <<FK → Users, NOT NULL>>
+    # UpdatedBy      : INT <<FK → Users, NULL>>
+    CreatedAt        : DATETIME2(0)  <<NOT NULL>>
+    UpdatedAt        : DATETIME2(0)  <<NULL>>
+}
+
+note right of Equipments
+  CHK Status IN:
+  'InUse', 'PendingRepair',
+  'UnderMaintenance',
+  'ProposedDisposal', 'Disposed'
+  ---
+  State Machine:
+  InUse → PendingRepair
+  → UnderMaintenance
+  → ProposedDisposal → Disposed
+end note
+
+' ============================================================
+'  TABLE: TransferHistories
+' ============================================================
+entity "**TransferHistories**" as TransferHistories {
+    + TransferID    : INT <<PK, IDENTITY>>
+    --
+    # EquipmentID   : INT <<FK → Equipments, NOT NULL>>
+    # FromRoomID    : INT <<FK → Rooms, NULL>>
+    # ToRoomID      : INT <<FK → Rooms, NOT NULL>>
+    # TransferredBy : INT <<FK → Users, NOT NULL>>
+    TransferDate    : DATETIME2(0)  <<NOT NULL>>
+    Reason          : NVARCHAR(500) <<NULL>>
+}
+
+note right of TransferHistories
+  CHK: FromRoomID IS NULL
+    OR FromRoomID <> ToRoomID
+  ---
+  Read-only audit trail
+  Không được xóa
+end note
+
+' ============================================================
+'  TABLE: EquipmentStatusLogs
+' ============================================================
+entity "**EquipmentStatusLogs**" as EquipmentStatusLogs {
+    + LogID          : INT <<PK, IDENTITY>>
+    --
+    # EquipmentID    : INT <<FK → Equipments, NOT NULL>>
+    # ChangedBy      : INT <<FK → Users, NOT NULL>>
+    OldStatus        : NVARCHAR(30)  <<NULL>>
+    NewStatus        : NVARCHAR(30)  <<NOT NULL>>
+    FieldChanged     : NVARCHAR(100) <<NULL>>
+    OldValue         : NVARCHAR(500) <<NULL>>
+    NewValue         : NVARCHAR(500) <<NULL>>
+    ChangeReason     : NVARCHAR(500) <<NULL>>
+    ChangedAt        : DATETIME2(0)  <<NOT NULL>>
+}
+
+note right of EquipmentStatusLogs
+  Auto INSERT via Trigger
+  trg_Equipment_AfterUpdate
+  ---
+  Read-only audit trail
+  Không được xóa/sửa
+end note
+
+' ============================================================
+'  TABLE: IncidentReports
+' ============================================================
+entity "**IncidentReports**" as IncidentReports {
+    + IncidentID     : INT <<PK, IDENTITY>>
+    --
+    # EquipmentID    : INT <<FK → Equipments, NOT NULL>>
+    # RoomID         : INT <<FK → Rooms, NOT NULL>>
+    # ReportedBy     : INT <<FK → Users, NOT NULL>>
+    # AssignedTo     : INT <<FK → Users, NULL>>
+    Description      : NVARCHAR(MAX) <<NOT NULL>>
+    ImageUrl         : NVARCHAR(500) <<NULL>>
+    Status           : NVARCHAR(30)  <<NOT NULL, DEFAULT 'Pending'>>
+    ReportedAt       : DATETIME2(0)  <<NOT NULL>>
+    ResolvedAt       : DATETIME2(0)  <<NULL>>
+    ResolutionNote   : NVARCHAR(MAX) <<NULL>>
+    DueDate          : DATETIME2(0)  <<NULL>>
+    IsOverdue        : BIT           <<NOT NULL, DEFAULT 0>>
+}
+
+note right of IncidentReports
+  CHK Status IN: 'Pending',
+  'InProgress', 'Resolved',
+  'Cancelled'
+  ---
+  CHK: ResolvedAt >= ReportedAt
+  ---
+  Business Rule: DueDate = 3-5
+  ngày làm việc từ ReportedAt
+end note
+
+' ============================================================
+'  TABLE: MaintenanceTickets
+' ============================================================
+entity "**MaintenanceTickets**" as MaintenanceTickets {
+    + TicketID           : INT <<PK, IDENTITY>>
+    --
+    # IncidentID         : INT <<FK → IncidentReports, NOT NULL, UNIQUE>>
+    # EquipmentID        : INT <<FK → Equipments, NOT NULL>>
+    # CreatedBy          : INT <<FK → Users, NOT NULL>>
+    ServiceProvider      : NVARCHAR(200)  <<NOT NULL>>
+    EstimatedCost        : DECIMAL(15,2)  <<NULL>>
+    ActualCost           : DECIMAL(15,2)  <<NULL>>
+    SentDate             : DATE           <<NOT NULL>>
+    ExpectedReturnDate   : DATE           <<NOT NULL>>
+    ActualReturnDate     : DATE           <<NULL>>
+    Status               : NVARCHAR(30)   <<NOT NULL, DEFAULT 'Sent'>>
+    Notes                : NVARCHAR(MAX)  <<NULL>>
+    CreatedAt            : DATETIME2(0)   <<NOT NULL>>
+}
+
+note right of MaintenanceTickets
+  CHK Status IN: 'Sent',
+  'Returned', 'Cancelled'
+  ---
+  CHK: EstimatedCost >= 0
+  CHK: ExpectedReturnDate >= SentDate
+  ---
+  UQ(IncidentID): 1 sự cố
+  → tối đa 1 phiếu bảo trì
+end note
+
+' ============================================================
+'  TABLE: DisposalRequests
+' ============================================================
+entity "**DisposalRequests**" as DisposalRequests {
+    + DisposalID    : INT <<PK, IDENTITY>>
+    --
+    # EquipmentID   : INT <<FK → Equipments, NOT NULL>>
+    # ProposedBy    : INT <<FK → Users, NOT NULL>>
+    # ApprovedBy    : INT <<FK → Users, NULL>>
+    Reason          : NVARCHAR(MAX) <<NOT NULL>>
+    Status          : NVARCHAR(30)  <<NOT NULL, DEFAULT 'Pending'>>
+    ProposedAt      : DATETIME2(0)  <<NOT NULL>>
+    DecidedAt       : DATETIME2(0)  <<NULL>>
+    AdminNote       : NVARCHAR(500) <<NULL>>
+}
+
+note right of DisposalRequests
+  CHK Status IN: 'Pending',
+  'Approved', 'Rejected'
+  ---
+  CHK: DecidedAt >= ProposedAt
+  ---
+  Chỉ Admin được ApprovedBy
+end note
+
+' ============================================================
+'  TABLE: Notifications
+' ============================================================
+entity "**Notifications**" as Notifications {
+    + NotificationID     : INT <<PK, IDENTITY>>
+    --
+    # RecipientID        : INT <<FK → Users, NOT NULL>>
+    Title                : NVARCHAR(200)  <<NOT NULL>>
+    Message              : NVARCHAR(MAX)  <<NOT NULL>>
+    Type                 : NVARCHAR(50)   <<NOT NULL>>
+    IsRead               : BIT            <<NOT NULL, DEFAULT 0>>
+    SentAt               : DATETIME2(0)   <<NOT NULL>>
+    RelatedEntityType    : NVARCHAR(50)   <<NULL>>
+    RelatedEntityID      : INT            <<NULL>>
+}
+
+note right of Notifications
+  CHK Type IN:
+  'IncidentReported',
+  'IncidentResolved',
+  'PasswordReset',
+  'WarrantyExpiry',
+  'DisposalProposed',
+  'DisposalDecided'
+end note
+
+' ============================================================
+'  TABLE: PasswordResetTokens
+' ============================================================
+entity "**PasswordResetTokens**" as PasswordResetTokens {
+    + TokenID    : INT <<PK, IDENTITY>>
+    --
+    # UserID     : INT           <<FK → Users, NOT NULL>>
+    Token        : NVARCHAR(256) <<NOT NULL, UNIQUE>>
+    ExpiresAt    : DATETIME2(0)  <<NOT NULL>>
+    IsUsed       : BIT           <<NOT NULL, DEFAULT 0>>
+    CreatedAt    : DATETIME2(0)  <<NOT NULL>>
+}
+
+note right of PasswordResetTokens
+  CHK: ExpiresAt > CreatedAt
+  ---
+  Token hết hạn sau 15 phút
+  Max 3 lần / user / 24 giờ
+  (kiểm tra ở Application layer)
+  ---
+  ON DELETE CASCADE từ Users
+end note
+
+' ============================================================
+'  RELATIONSHIPS
+' ============================================================
+
+' --- EquipmentCategories → Equipments ---
+EquipmentCategories ||--o{ Equipments : "categorizes\n(RESTRICT on DELETE)"
+
+' --- Rooms → Equipments (current location) ---
+Rooms |o--o{ Equipments : "currentLocation\n(SET NULL on DELETE)"
+
+' --- Users → Equipments (createdBy / updatedBy) ---
+Users ||--o{ Equipments : "createdBy\n(RESTRICT)"
+Users |o--o{ Equipments : "updatedBy\n(SET NULL)"
+
+' --- Equipments → TransferHistories ---
+Equipments ||--o{ TransferHistories : "hasTransfers\n(RESTRICT)"
+
+' --- Rooms → TransferHistories ---
+Rooms |o--o{ TransferHistories : "fromRoom\n(SET NULL)"
+Rooms ||--o{ TransferHistories : "toRoom\n(RESTRICT)"
+
+' --- Users → TransferHistories ---
+Users ||--o{ TransferHistories : "performedBy\n(RESTRICT)"
+
+' --- Equipments → EquipmentStatusLogs ---
+Equipments ||--o{ EquipmentStatusLogs : "hasStatusLogs\n(RESTRICT)"
+
+' --- Users → EquipmentStatusLogs ---
+Users ||--o{ EquipmentStatusLogs : "changedBy\n(RESTRICT)"
+
+' --- Equipments → IncidentReports ---
+Equipments ||--o{ IncidentReports : "reported\n(RESTRICT)"
+
+' --- Rooms → IncidentReports ---
+Rooms ||--o{ IncidentReports : "locatedAt\n(RESTRICT)"
+
+' --- Users → IncidentReports ---
+Users ||--o{ IncidentReports : "reportedBy [Lecturer]\n(RESTRICT)"
+Users |o--o{ IncidentReports : "assignedTo [Technician]\n(SET NULL)"
+
+' --- IncidentReports → MaintenanceTickets ---
+IncidentReports ||--o| MaintenanceTickets : "generates [1..0..1]\n(RESTRICT)"
+
+' --- Equipments → MaintenanceTickets ---
+Equipments ||--o{ MaintenanceTickets : "maintained\n(RESTRICT)"
+
+' --- Users → MaintenanceTickets ---
+Users ||--o{ MaintenanceTickets : "createdBy [Technician]\n(RESTRICT)"
+
+' --- Equipments → DisposalRequests ---
+Equipments ||--o| DisposalRequests : "proposedFor [0..1]\n(RESTRICT)"
+
+' --- Users → DisposalRequests ---
+Users ||--o{ DisposalRequests : "proposedBy [Technician]\n(RESTRICT)"
+Users |o--o{ DisposalRequests : "approvedBy [Admin]\n(SET NULL)"
+
+' --- Users → Notifications ---
+Users ||--o{ Notifications : "receives\n(CASCADE)"
+
+' --- Users → PasswordResetTokens ---
+Users ||--o{ PasswordResetTokens : "requestsReset\n(CASCADE)"
+
+@enduml
