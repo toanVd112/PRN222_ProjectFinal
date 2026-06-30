@@ -1,0 +1,100 @@
+@{
+    Layout = null;
+}
+@model PRN_Project.Models.LoginViewModel
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập - CEMS</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Bootstrap & Custom CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body {
+            background-color: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+        .login-card {
+            background: #fff;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 450px;
+        }
+        .login-card .brand {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4F46E5;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .login-card .btn-primary {
+            background-color: #4F46E5;
+            border-color: #4F46E5;
+            padding: 0.75rem;
+            font-weight: 600;
+        }
+        .login-card .btn-primary:hover {
+            background-color: #4338ca;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="brand">
+            <i class='bx bx-cube-alt'></i> CEMS
+        </div>
+        <h5 class="text-center mb-4 text-muted">Đăng nhập vào hệ thống</h5>
+        
+        <form asp-action="Login" asp-controller="Auth" method="post">
+            @if (ViewData.ModelState != null && ViewData.ModelState.ErrorCount > 0)
+            {
+                <div class="alert alert-danger small">
+                    <div asp-validation-summary="All" class="text-danger mb-0"></div>
+                </div>
+            }
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+            
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label fw-medium">Email</label>
+                <input asp-for="Email" class="form-control" placeholder="nhap.email@cems.com" autofocus />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+            
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label fw-medium">Mật khẩu</label>
+                <input asp-for="Password" class="form-control" placeholder="••••••••" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4 d-flex justify-content-between align-items-center">
+                <div class="form-check">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label small text-muted">Ghi nhớ đăng nhập</label>
+                </div>
+                <a href="#" class="small text-decoration-none" style="color: #4F46E5;">Quên mật khẩu?</a>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
+        </form>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
