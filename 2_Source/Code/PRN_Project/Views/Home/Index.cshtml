@@ -1,8 +1,119 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Tổng quan hệ thống";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="row g-4 mb-4">
+    <!-- Stat Card 1 -->
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card-premium stat-card">
+            <div class="stat-icon blue">
+                <i class='bx bx-laptop'></i>
+            </div>
+            <div class="stat-details">
+                <h3>1,248</h3>
+                <p>Thiết bị đang sử dụng</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stat Card 2 -->
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card-premium stat-card">
+            <div class="stat-icon red">
+                <i class='bx bx-error-alt'></i>
+            </div>
+            <div class="stat-details">
+                <h3>12</h3>
+                <p>Sự cố đang chờ xử lý</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stat Card 3 -->
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card-premium stat-card">
+            <div class="stat-icon orange">
+                <i class='bx bx-wrench'></i>
+            </div>
+            <div class="stat-details">
+                <h3>8</h3>
+                <p>Thiết bị đang bảo trì</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stat Card 4 -->
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card-premium stat-card">
+            <div class="stat-icon green">
+                <i class='bx bx-door-open'></i>
+            </div>
+            <div class="stat-details">
+                <h3>45</h3>
+                <p>Phòng học đang hoạt động</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Main Chart Area -->
+    <div class="col-12 col-lg-8">
+        <div class="card-premium">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">Biểu đồ sự cố theo tháng</h5>
+                <button class="btn btn-primary-custom btn-sm">
+                    <i class='bx bx-export'></i> Xuất báo cáo
+                </button>
+            </div>
+            <!-- Mockup Chart placeholder -->
+            <div style="height: 300px; background: repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 10px, #ffffff 10px, #ffffff 20px); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px dashed #cbd5e1;">
+                <span class="text-secondary fw-semibold">Khu vực hiển thị biểu đồ Chart.js</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="col-12 col-lg-4">
+        <div class="card-premium">
+            <h5 class="fw-bold mb-4">Hoạt động gần đây</h5>
+            
+            <div class="d-flex align-items-start mb-3">
+                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-circle me-3">
+                    <i class='bx bx-transfer fs-5'></i>
+                </div>
+                <div>
+                    <p class="mb-1 fw-semibold text-dark">Điều chuyển máy chiếu</p>
+                    <p class="mb-0 text-secondary" style="font-size: 0.8rem;">Từ P301 sang P302 bởi KTV_Hung</p>
+                    <small class="text-muted">10 phút trước</small>
+                </div>
+            </div>
+            
+            <div class="d-flex align-items-start mb-3">
+                <div class="bg-danger bg-opacity-10 text-danger p-2 rounded-circle me-3">
+                    <i class='bx bx-error fs-5'></i>
+                </div>
+                <div>
+                    <p class="mb-1 fw-semibold text-dark">Báo hỏng Điều hòa</p>
+                    <p class="mb-0 text-secondary" style="font-size: 0.8rem;">P204 - Giảng viên NguyenVanA</p>
+                    <small class="text-muted">1 giờ trước</small>
+                </div>
+            </div>
+            
+            <div class="d-flex align-items-start">
+                <div class="bg-success bg-opacity-10 text-success p-2 rounded-circle me-3">
+                    <i class='bx bx-check-circle fs-5'></i>
+                </div>
+                <div>
+                    <p class="mb-1 fw-semibold text-dark">Sửa xong Mic không dây</p>
+                    <p class="mb-0 text-secondary" style="font-size: 0.8rem;">Thiết bị đã hoạt động trở lại</p>
+                    <small class="text-muted">3 giờ trước</small>
+                </div>
+            </div>
+            
+            <button class="btn btn-link text-primary w-100 mt-3 text-decoration-none fw-semibold">
+                Xem tất cả lịch sử
+            </button>
+        </div>
+    </div>
 </div>
