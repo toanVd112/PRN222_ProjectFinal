@@ -2,8 +2,11 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using PRN_Project.Models;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace PRN_Project.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;

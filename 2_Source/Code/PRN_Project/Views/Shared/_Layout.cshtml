@@ -28,45 +28,65 @@
                         <i class='bx bx-grid-alt'></i> Dashboard
                     </a>
                 </li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="menu-header">Quản trị (Admin)</li>
+                    <li>
+                        <a href="#">
+                            <i class='bx bx-user-pin'></i> Quản lý Tài khoản
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class='bx bx-door-open'></i> Quản lý Phòng học
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class='bx bx-category'></i> Danh mục Thiết bị
+                        </a>
+                    </li>
+                }
                 
-                <li class="menu-header">Quản trị (Admin)</li>
-                <li>
-                    <a href="#">
-                        <i class='bx bx-user-pin'></i> Quản lý Tài khoản
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <i class='bx bx-door-open'></i> Quản lý Phòng học
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <i class='bx bx-category'></i> Danh mục Thiết bị
-                    </a>
-                </li>
-                
-                <li class="menu-header">Kỹ thuật (Technician)</li>
-                <li>
-                    <a href="#">
-                        <i class='bx bx-laptop'></i> Kho Thiết bị
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <i class='bx bx-transfer'></i> Luân chuyển
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <i class='bx bx-wrench'></i> Sự cố & Bảo trì
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <i class='bx bx-trash-alt'></i> Thanh lý
-                    </a>
-                </li>
+                @if (User.IsInRole("Technician") || User.IsInRole("Admin"))
+                {
+                    <li class="menu-header">Kỹ thuật (Technician)</li>
+                    <li>
+                        <a href="#">
+                            <i class='bx bx-laptop'></i> Kho Thiết bị
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class='bx bx-transfer'></i> Luân chuyển
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class='bx bx-wrench'></i> Sự cố & Bảo trì
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class='bx bx-trash-alt'></i> Thanh lý
+                        </a>
+                    </li>
+                }
+
+                @if (User.IsInRole("Lecturer"))
+                {
+                    <li class="menu-header">Giảng viên (Lecturer)</li>
+                    <li>
+                        <a href="#">
+                            <i class='bx bx-door-open'></i> Phòng của tôi
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class='bx bx-error'></i> Báo cáo sự cố
+                        </a>
+                    </li>
+                }
             </ul>
         </aside>
 
@@ -82,12 +102,21 @@
                         <i class='bx bx-bell'></i>
                         <span class="badge-notification">3</span>
                     </button>
-                    <div class="user-profile">
-                        <div class="user-info text-end d-none d-md-block">
-                            <span class="user-name">Team Lead</span>
-                            <span class="user-role">Administrator</span>
+                    <div class="user-profile dropdown">
+                        <div class="user-info text-end d-none d-md-block dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+                            <span class="user-name">@(User.Identity?.Name ?? "Guest")</span>
+                            <span class="user-role">@(User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value ?? "Guest")</span>
                         </div>
-                        <img src="https://ui-avatars.com/api/?name=Admin&background=4F46E5&color=fff" alt="User Avatar">
+                        <img src="https://ui-avatars.com/api/?name=@(User.Identity?.Name ?? "Guest")&background=4F46E5&color=fff" alt="User Avatar">
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
+                            <li>
+                                <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class='bx bx-log-out'></i> Đăng xuất
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </header>
