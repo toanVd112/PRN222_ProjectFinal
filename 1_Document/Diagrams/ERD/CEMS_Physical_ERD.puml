@@ -101,6 +101,7 @@ entity "**Equipments**" as Equipments {
     PurchaseDate     : DATE          <<NULL>>
     WarrantyExpiry   : DATE          <<NULL>>
     Status           : NVARCHAR(30)  <<NOT NULL, DEFAULT 'InUse'>>
+    IsActive         : BIT           <<NOT NULL, DEFAULT 1>>
     Notes            : NVARCHAR(MAX) <<NULL>>
     # CreatedBy      : INT <<FK → Users, NOT NULL>>
     # UpdatedBy      : INT <<FK → Users, NULL>>

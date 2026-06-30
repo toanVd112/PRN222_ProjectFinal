@@ -102,6 +102,7 @@ Entity `User` đóng vai trò **Supertype** với 3 **Subtype** tương ứng 3 
 | PurchaseDate | Date | NULL | Ngày mua |
 | WarrantyExpiry | Date | NULL | Ngày hết bảo hành |
 | Status | String | NOT NULL | Trạng thái: InUse / PendingRepair / UnderMaintenance / ProposedDisposal / Disposed |
+| IsActive | Boolean | NOT NULL, Default: true | Trạng thái hoạt động (Soft delete) |
 | Notes | Text | NULL | Ghi chú thêm |
 | **CreatedBy** (FK) | Integer | NOT NULL, FK → User | Người nhập kho (Technician) |
 | **UpdatedBy** (FK) | Integer | NULL, FK → User | Technician cập nhật thông tin gần nhất |
@@ -396,6 +397,7 @@ entity Equipment {
   PurchaseDate : Date
   WarrantyExpiry : Date
   * Status : String
+  * IsActive : Boolean
   Notes : Text
   * CreatedBy : Integer <<FK>>
   UpdatedBy : Integer <<FK>>

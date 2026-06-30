@@ -1,38 +1,19 @@
-# Physical ERD Design — Classroom Equipment Management System (CEMS)
-**DBMS:** Microsoft SQL Server 2019+  
-**Collation:** Vietnamese_CI_AS  
-**Phiên bản:** v1.0  
-**Tham chiếu Logical ERD:** ERD_Design.md v1.1  
-**Ngày:** 2026-06-23
+-- ==============================================================================
+-- Classroom Equipment Management System (CEMS)
+-- Database Creation Script
+-- Generated based on Physical_ERD_Design.md v1.0
+-- DBMS: Microsoft SQL Server 2019+
+-- Collation: Vietnamese_CI_AS
+-- ==============================================================================
 
----
+USE PRN_Project;
+GO
 
-## 1. Mapping Logical → Physical (Kiểu dữ liệu)
+-- ==============================================================================
+-- 1. TABLES
+-- ==============================================================================
 
-| Kiểu Logical | Kiểu Physical (SQL Server) | Ghi chú |
-|---|---|---|
-| `Integer` (PK/FK) | `INT` | Auto-increment dùng `IDENTITY(1,1)` |
-| `String` (short code) | `NVARCHAR(20)` | Mã phòng, mã người dùng |
-| `String` (name) | `NVARCHAR(150)` | Họ tên, tên thiết bị |
-| `String` (email) | `NVARCHAR(256)` | Theo chuẩn RFC 5321 |
-| `String` (password hash) | `NVARCHAR(256)` | BCrypt hash output |
-| `String` (url/path) | `NVARCHAR(500)` | URL ảnh, file path |
-| `String` (enum/status) | `NVARCHAR(30)` | Trạng thái, vai trò |
-| `String` (phone) | `NVARCHAR(20)` | Số điện thoại |
-| `String` (short note) | `NVARCHAR(500)` | Lý do, ghi chú ngắn |
-| `Text` (long content) | `NVARCHAR(MAX)` | Mô tả sự cố, ghi chú dài |
-| `Boolean` | `BIT` | 0 = false, 1 = true |
-| `DateTime` | `DATETIME2(0)` | Độ chính xác giây, tiết kiệm space |
-| `Date` | `DATE` | Không cần giờ/phút/giây |
-| `Decimal` (money) | `DECIMAL(15, 2)` | Đủ cho VNĐ và USD |
-
----
-
-## 2. Schema vật lý từng bảng
-
-### 2.1 Bảng `Users`
-
-```sql
+-- 1. Users
 CREATE TABLE Users (
     UserID          INT             NOT NULL IDENTITY(1,1),
     UserCode        NVARCHAR(20)    NOT NULL,
@@ -55,23 +36,8 @@ CREATE TABLE Users (
     CONSTRAINT UQ_Users_UserCode UNIQUE (UserCode),
     CONSTRAINT UQ_Users_Email    UNIQUE (Email)
 );
-```
 
-**Indexes:**
-```sql
--- Tìm kiếm theo email khi đăng nhập (hot path)
-CREATE INDEX IX_Users_Email    ON Users (Email)   WHERE IsActive = 1;
--- Lọc theo vai trò trong trang quản lý tài khoản
-CREATE INDEX IX_Users_Role     ON Users (Role)    WHERE IsActive = 1;
--- Lọc tài khoản đang bị khóa
-CREATE INDEX IX_Users_Lockout  ON Users (LockoutUntil) WHERE LockoutUntil IS NOT NULL;
-```
-
----
-
-### 2.2 Bảng `Rooms`
-
-```sql
+-- 2. Rooms
 CREATE TABLE Rooms (
     RoomID      INT             NOT NULL IDENTITY(1,1),
     RoomCode    NVARCHAR(20)    NOT NULL,
@@ -88,19 +54,8 @@ CREATE TABLE Rooms (
     CONSTRAINT PK_Rooms PRIMARY KEY (RoomID),
     CONSTRAINT UQ_Rooms_RoomCode UNIQUE (RoomCode)
 );
-```
 
-**Indexes:**
-```sql
--- Danh sách phòng đang hoạt động (màn hình chọn phòng)
-CREATE INDEX IX_Rooms_IsActive ON Rooms (IsActive, RoomCode);
-```
-
----
-
-### 2.3 Bảng `EquipmentCategories`
-
-```sql
+-- 3. EquipmentCategories
 CREATE TABLE EquipmentCategories (
     CategoryID      INT             NOT NULL IDENTITY(1,1),
     CategoryName    NVARCHAR(150)   NOT NULL,
@@ -110,13 +65,8 @@ CREATE TABLE EquipmentCategories (
     CONSTRAINT PK_EquipmentCategories PRIMARY KEY (CategoryID),
     CONSTRAINT UQ_EquipmentCategories_Name UNIQUE (CategoryName)
 );
-```
 
----
-
-### 2.4 Bảng `Equipments` ⭐ (Trung tâm)
-
-```sql
+-- 4. Equipments
 CREATE TABLE Equipments (
     EquipmentID     INT             NOT NULL IDENTITY(1,1),
     AssetCode       NVARCHAR(50)    NOT NULL,
@@ -146,41 +96,22 @@ CREATE TABLE Equipments (
 
     CONSTRAINT FK_Equipments_Category
         FOREIGN KEY (CategoryID) REFERENCES EquipmentCategories(CategoryID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Equipments_Room
         FOREIGN KEY (CurrentRoomID) REFERENCES Rooms(RoomID)
-        ON DELETE SET NULL ON UPDATE CASCADE,
+        ON DELETE SET NULL ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Equipments_CreatedBy
         FOREIGN KEY (CreatedBy) REFERENCES Users(UserID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Equipments_UpdatedBy
         FOREIGN KEY (UpdatedBy) REFERENCES Users(UserID)
         ON DELETE NO ACTION ON UPDATE NO ACTION
 );
-```
 
-**Indexes:**
-```sql
--- Lọc theo trạng thái (màn hình chính Technician)
-CREATE INDEX IX_Equipments_Status      ON Equipments (Status) WHERE IsActive = 1;
--- Lọc theo phòng (Lecturer xem thiết bị trong phòng)
-CREATE INDEX IX_Equipments_Room        ON Equipments (CurrentRoomID) WHERE CurrentRoomID IS NOT NULL AND IsActive = 1;
--- Lọc theo loại
-CREATE INDEX IX_Equipments_Category    ON Equipments (CategoryID) WHERE IsActive = 1;
--- Cảnh báo hết bảo hành (background job)
-CREATE INDEX IX_Equipments_Warranty    ON Equipments (WarrantyExpiry) WHERE WarrantyExpiry IS NOT NULL AND Status != 'Disposed' AND IsActive = 1;
--- Tìm nhanh theo AssetCode
-CREATE UNIQUE INDEX UIX_Equipments_AssetCode ON Equipments (AssetCode);
-```
-
----
-
-### 2.5 Bảng `TransferHistories`
-
-```sql
+-- 5. TransferHistories
 CREATE TABLE TransferHistories (
     TransferID      INT             NOT NULL IDENTITY(1,1),
     EquipmentID     INT             NOT NULL,
@@ -194,7 +125,7 @@ CREATE TABLE TransferHistories (
 
     CONSTRAINT FK_Transfer_Equipment
         FOREIGN KEY (EquipmentID) REFERENCES Equipments(EquipmentID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Transfer_FromRoom
         FOREIGN KEY (FromRoomID) REFERENCES Rooms(RoomID)
@@ -206,26 +137,13 @@ CREATE TABLE TransferHistories (
 
     CONSTRAINT FK_Transfer_TransferredBy
         FOREIGN KEY (TransferredBy) REFERENCES Users(UserID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT CHK_Transfer_Rooms
         CHECK (FromRoomID IS NULL OR FromRoomID != ToRoomID)
 );
-```
 
-**Indexes:**
-```sql
--- Xem lịch sử chuyển phòng của 1 thiết bị (sắp theo thời gian giảm)
-CREATE INDEX IX_Transfer_Equipment ON TransferHistories (EquipmentID, TransferDate DESC);
--- Xem lịch sử theo phòng
-CREATE INDEX IX_Transfer_ToRoom    ON TransferHistories (ToRoomID, TransferDate DESC);
-```
-
----
-
-### 2.6 Bảng `EquipmentStatusLogs`
-
-```sql
+-- 6. EquipmentStatusLogs
 CREATE TABLE EquipmentStatusLogs (
     LogID           INT             NOT NULL IDENTITY(1,1),
     EquipmentID     INT             NOT NULL,
@@ -242,27 +160,14 @@ CREATE TABLE EquipmentStatusLogs (
 
     CONSTRAINT FK_StatusLog_Equipment
         FOREIGN KEY (EquipmentID) REFERENCES Equipments(EquipmentID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_StatusLog_ChangedBy
         FOREIGN KEY (ChangedBy) REFERENCES Users(UserID)
-        ON DELETE NO ACTION ON UPDATE CASCADE
+        ON DELETE NO ACTION ON UPDATE NO ACTION
 );
-```
 
-**Indexes:**
-```sql
--- Xem toàn bộ lịch sử của 1 thiết bị (sắp theo thời gian giảm)
-CREATE INDEX IX_StatusLog_Equipment ON EquipmentStatusLogs (EquipmentID, ChangedAt DESC);
--- Xem ai đã thực hiện thay đổi
-CREATE INDEX IX_StatusLog_ChangedBy ON EquipmentStatusLogs (ChangedBy, ChangedAt DESC);
-```
-
----
-
-### 2.7 Bảng `IncidentReports`
-
-```sql
+-- 7. IncidentReports
 CREATE TABLE IncidentReports (
     IncidentID      INT             NOT NULL IDENTITY(1,1),
     EquipmentID     INT             NOT NULL,
@@ -284,15 +189,15 @@ CREATE TABLE IncidentReports (
 
     CONSTRAINT FK_Incident_Equipment
         FOREIGN KEY (EquipmentID) REFERENCES Equipments(EquipmentID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Incident_Room
         FOREIGN KEY (RoomID) REFERENCES Rooms(RoomID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Incident_ReportedBy
         FOREIGN KEY (ReportedBy) REFERENCES Users(UserID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Incident_AssignedTo
         FOREIGN KEY (AssignedTo) REFERENCES Users(UserID)
@@ -301,25 +206,8 @@ CREATE TABLE IncidentReports (
     CONSTRAINT CHK_Incident_ResolvedAt
         CHECK (ResolvedAt IS NULL OR ResolvedAt >= ReportedAt)
 );
-```
 
-**Indexes:**
-```sql
--- Danh sách sự cố đang Pending (Technician xử lý)
-CREATE INDEX IX_Incident_Status      ON IncidentReports (Status, ReportedAt DESC);
--- Sự cố của 1 thiết bị cụ thể
-CREATE INDEX IX_Incident_Equipment   ON IncidentReports (EquipmentID, Status);
--- Sự cố do 1 Giảng viên gửi (Lecturer theo dõi)
-CREATE INDEX IX_Incident_ReportedBy  ON IncidentReports (ReportedBy, ReportedAt DESC);
--- Phát hiện sự cố quá hạn (background job)
-CREATE INDEX IX_Incident_Overdue     ON IncidentReports (DueDate) WHERE Status IN ('Pending', 'InProgress');
-```
-
----
-
-### 2.8 Bảng `MaintenanceTickets`
-
-```sql
+-- 8. MaintenanceTickets
 CREATE TABLE MaintenanceTickets (
     TicketID            INT             NOT NULL IDENTITY(1,1),
     IncidentID          INT             NOT NULL,
@@ -340,19 +228,19 @@ CREATE TABLE MaintenanceTickets (
     CreatedAt           DATETIME2(0)    NOT NULL DEFAULT GETDATE(),
 
     CONSTRAINT PK_MaintenanceTickets PRIMARY KEY (TicketID),
-    CONSTRAINT UQ_Ticket_Incident    UNIQUE (IncidentID),   -- 1 sự cố chỉ có 1 phiếu
+    CONSTRAINT UQ_Ticket_Incident    UNIQUE (IncidentID),
 
     CONSTRAINT FK_Ticket_Incident
         FOREIGN KEY (IncidentID) REFERENCES IncidentReports(IncidentID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Ticket_Equipment
         FOREIGN KEY (EquipmentID) REFERENCES Equipments(EquipmentID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Ticket_CreatedBy
         FOREIGN KEY (CreatedBy) REFERENCES Users(UserID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT CHK_Ticket_Dates
         CHECK (ExpectedReturnDate >= SentDate),
@@ -360,21 +248,8 @@ CREATE TABLE MaintenanceTickets (
     CONSTRAINT CHK_Ticket_ActualReturn
         CHECK (ActualReturnDate IS NULL OR ActualReturnDate >= SentDate)
 );
-```
 
-**Indexes:**
-```sql
--- Phiếu theo trạng thái
-CREATE INDEX IX_Ticket_Status    ON MaintenanceTickets (Status, SentDate DESC);
--- Phiếu của 1 thiết bị
-CREATE INDEX IX_Ticket_Equipment ON MaintenanceTickets (EquipmentID, CreatedAt DESC);
-```
-
----
-
-### 2.9 Bảng `DisposalRequests`
-
-```sql
+-- 9. DisposalRequests
 CREATE TABLE DisposalRequests (
     DisposalID      INT             NOT NULL IDENTITY(1,1),
     EquipmentID     INT             NOT NULL,
@@ -392,11 +267,11 @@ CREATE TABLE DisposalRequests (
 
     CONSTRAINT FK_Disposal_Equipment
         FOREIGN KEY (EquipmentID) REFERENCES Equipments(EquipmentID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Disposal_ProposedBy
         FOREIGN KEY (ProposedBy) REFERENCES Users(UserID)
-        ON DELETE NO ACTION ON UPDATE CASCADE,
+        ON DELETE NO ACTION ON UPDATE NO ACTION,
 
     CONSTRAINT FK_Disposal_ApprovedBy
         FOREIGN KEY (ApprovedBy) REFERENCES Users(UserID)
@@ -405,21 +280,8 @@ CREATE TABLE DisposalRequests (
     CONSTRAINT CHK_Disposal_DecidedAt
         CHECK (DecidedAt IS NULL OR DecidedAt >= ProposedAt)
 );
-```
 
-**Indexes:**
-```sql
--- Danh sách chờ Admin phê duyệt
-CREATE INDEX IX_Disposal_Status    ON DisposalRequests (Status, ProposedAt DESC);
--- Đề xuất của 1 thiết bị
-CREATE INDEX IX_Disposal_Equipment ON DisposalRequests (EquipmentID, Status);
-```
-
----
-
-### 2.10 Bảng `Notifications`
-
-```sql
+-- 10. Notifications
 CREATE TABLE Notifications (
     NotificationID      INT             NOT NULL IDENTITY(1,1),
     RecipientID         INT             NOT NULL,
@@ -441,25 +303,10 @@ CREATE TABLE Notifications (
 
     CONSTRAINT FK_Notif_Recipient
         FOREIGN KEY (RecipientID) REFERENCES Users(UserID)
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE CASCADE ON UPDATE NO ACTION
 );
-```
 
-**Indexes:**
-```sql
--- Thông báo chưa đọc của 1 user (badge count, notification bell)
-CREATE INDEX IX_Notif_Unread  ON Notifications (RecipientID, IsRead, SentAt DESC);
--- Tất cả thông báo của 1 user
-CREATE INDEX IX_Notif_User    ON Notifications (RecipientID, SentAt DESC);
-```
-
----
-
-### 2.11 Bảng `PasswordResetTokens` *(Quên mật khẩu)*
-
-> Lưu token đặt lại mật khẩu tạm thời khi người dùng thực hiện `UC_ForgotPassword`. Hỗ trợ Business Rule: tối đa 3 lần yêu cầu trong 24 giờ.
-
-```sql
+-- 11. PasswordResetTokens
 CREATE TABLE PasswordResetTokens (
     TokenID     INT             NOT NULL IDENTITY(1,1),
     UserID      INT             NOT NULL,
@@ -473,32 +320,129 @@ CREATE TABLE PasswordResetTokens (
 
     CONSTRAINT FK_ResetToken_User
         FOREIGN KEY (UserID) REFERENCES Users(UserID)
-        ON DELETE CASCADE ON UPDATE CASCADE,
+        ON DELETE CASCADE ON UPDATE NO ACTION,
 
     CONSTRAINT CHK_ResetToken_Expiry
         CHECK (ExpiresAt > CreatedAt)
 );
-```
 
-**Indexes:**
-```sql
--- Tra cứu token khi user bấm link reset (hot path)
+GO
+
+-- ==============================================================================
+-- 2. INDEXES
+-- ==============================================================================
+
+-- Users
+CREATE INDEX IX_Users_Email    ON Users (Email)   WHERE IsActive = 1;
+CREATE INDEX IX_Users_Role     ON Users (Role)    WHERE IsActive = 1;
+CREATE INDEX IX_Users_Lockout  ON Users (LockoutUntil) WHERE LockoutUntil IS NOT NULL;
+
+-- Rooms
+CREATE INDEX IX_Rooms_IsActive ON Rooms (IsActive, RoomCode);
+
+-- Equipments
+CREATE INDEX IX_Equipments_Status      ON Equipments (Status) WHERE IsActive = 1;
+CREATE INDEX IX_Equipments_Room        ON Equipments (CurrentRoomID) WHERE CurrentRoomID IS NOT NULL AND IsActive = 1;
+CREATE INDEX IX_Equipments_Category    ON Equipments (CategoryID) WHERE IsActive = 1;
+CREATE INDEX IX_Equipments_Warranty    ON Equipments (WarrantyExpiry) WHERE WarrantyExpiry IS NOT NULL AND Status != 'Disposed' AND IsActive = 1;
+CREATE UNIQUE INDEX UIX_Equipments_AssetCode ON Equipments (AssetCode);
+
+-- TransferHistories
+CREATE INDEX IX_Transfer_Equipment ON TransferHistories (EquipmentID, TransferDate DESC);
+CREATE INDEX IX_Transfer_ToRoom    ON TransferHistories (ToRoomID, TransferDate DESC);
+
+-- EquipmentStatusLogs
+CREATE INDEX IX_StatusLog_Equipment ON EquipmentStatusLogs (EquipmentID, ChangedAt DESC);
+CREATE INDEX IX_StatusLog_ChangedBy ON EquipmentStatusLogs (ChangedBy, ChangedAt DESC);
+
+-- IncidentReports
+CREATE INDEX IX_Incident_Status      ON IncidentReports (Status, ReportedAt DESC);
+CREATE INDEX IX_Incident_Equipment   ON IncidentReports (EquipmentID, Status);
+CREATE INDEX IX_Incident_ReportedBy  ON IncidentReports (ReportedBy, ReportedAt DESC);
+CREATE INDEX IX_Incident_Overdue     ON IncidentReports (DueDate) WHERE Status IN ('Pending', 'InProgress');
+
+-- MaintenanceTickets
+CREATE INDEX IX_Ticket_Status    ON MaintenanceTickets (Status, SentDate DESC);
+CREATE INDEX IX_Ticket_Equipment ON MaintenanceTickets (EquipmentID, CreatedAt DESC);
+
+-- DisposalRequests
+CREATE INDEX IX_Disposal_Status    ON DisposalRequests (Status, ProposedAt DESC);
+CREATE INDEX IX_Disposal_Equipment ON DisposalRequests (EquipmentID, Status);
+
+-- Notifications
+CREATE INDEX IX_Notif_Unread  ON Notifications (RecipientID, IsRead, SentAt DESC);
+CREATE INDEX IX_Notif_User    ON Notifications (RecipientID, SentAt DESC);
+
+-- PasswordResetTokens
 CREATE INDEX IX_ResetToken_Token
     ON PasswordResetTokens (Token)
     WHERE IsUsed = 0;
-
--- Đếm số lần yêu cầu trong 24h (Business Rule: max 3 lần)
 CREATE INDEX IX_ResetToken_UserCreated
     ON PasswordResetTokens (UserID, CreatedAt DESC);
-
--- Dọn dẹp token hết hạn (background cleanup job)
 CREATE INDEX IX_ResetToken_Expiry
     ON PasswordResetTokens (ExpiresAt)
     WHERE IsUsed = 0;
-```
 
-**Stored Procedure — Tạo token mới (áp dụng Business Rule):**
-```sql
+GO
+
+-- ==============================================================================
+-- 3. VIEWS
+-- ==============================================================================
+
+CREATE VIEW vw_EquipmentDetails AS
+SELECT
+    e.EquipmentID,
+    e.AssetCode,
+    e.EquipmentName,
+    e.Status,
+    e.PurchaseDate,
+    e.WarrantyExpiry,
+    ec.CategoryName,
+    r.RoomCode,
+    r.RoomName,
+    u.FullName AS CreatedByName
+FROM Equipments e
+LEFT JOIN EquipmentCategories ec ON e.CategoryID = ec.CategoryID
+LEFT JOIN Rooms r                ON e.CurrentRoomID = r.RoomID
+LEFT JOIN Users u                ON e.CreatedBy = u.UserID
+WHERE e.IsActive = 1;
+GO
+
+CREATE VIEW vw_PendingIncidents AS
+SELECT
+    ir.IncidentID,
+    ir.Status,
+    ir.ReportedAt,
+    ir.DueDate,
+    ir.IsOverdue,
+    e.AssetCode,
+    e.EquipmentName,
+    r.RoomCode,
+    r.RoomName,
+    u.FullName AS ReportedByName
+FROM IncidentReports ir
+JOIN Equipments e ON ir.EquipmentID = e.EquipmentID
+JOIN Rooms r      ON ir.RoomID = r.RoomID
+JOIN Users u      ON ir.ReportedBy = u.UserID
+WHERE ir.Status IN ('Pending', 'InProgress') AND e.IsActive = 1;
+GO
+
+CREATE VIEW vw_DashboardStats AS
+SELECT
+    (SELECT COUNT(*) FROM Equipments WHERE Status = 'InUse' AND IsActive = 1)               AS TotalInUse,
+    (SELECT COUNT(*) FROM Equipments WHERE Status = 'PendingRepair' AND IsActive = 1)       AS TotalPendingRepair,
+    (SELECT COUNT(*) FROM Equipments WHERE Status = 'UnderMaintenance' AND IsActive = 1)    AS TotalUnderMaintenance,
+    (SELECT COUNT(*) FROM Equipments WHERE Status = 'ProposedDisposal' AND IsActive = 1)    AS TotalProposedDisposal,
+    (SELECT COUNT(*) FROM Equipments WHERE Status = 'Disposed' AND IsActive = 1)            AS TotalDisposed,
+    (SELECT COUNT(*) FROM IncidentReports WHERE Status = 'Pending')        AS OpenIncidents,
+    (SELECT COUNT(*) FROM IncidentReports WHERE IsOverdue = 1)             AS OverdueIncidents,
+    (SELECT COUNT(*) FROM DisposalRequests WHERE Status = 'Pending')       AS PendingDisposals;
+GO
+
+-- ==============================================================================
+-- 4. STORED PROCEDURES
+-- ==============================================================================
+
 CREATE PROCEDURE sp_CreatePasswordResetToken
     @Email      NVARCHAR(256),
     @Token      NVARCHAR(256),
@@ -546,10 +490,8 @@ BEGIN
     FROM Users
     WHERE UserID = @UserID;
 END;
-```
+GO
 
-**Stored Procedure — Xác thực token và đặt lại mật khẩu:**
-```sql
 CREATE PROCEDURE sp_ResetPassword
     @Token          NVARCHAR(256),
     @NewPasswordHash NVARCHAR(256)
@@ -586,136 +528,12 @@ BEGIN
 
     SELECT 'Password reset successfully.' AS Result;
 END;
-```
+GO
 
----
+-- ==============================================================================
+-- 5. TRIGGERS
+-- ==============================================================================
 
-## 3. Thứ tự tạo bảng (Dependency Order)
-
-> Phải tạo bảng cha trước bảng con (theo FK dependency).
-
-```
-1.  Users                     (không phụ thuộc)
-2.  Rooms                     (không phụ thuộc)
-3.  EquipmentCategories       (không phụ thuộc)
-4.  Equipments                (phụ thuộc: Users, Rooms, EquipmentCategories)
-5.  TransferHistories         (phụ thuộc: Equipments, Rooms, Users)
-6.  EquipmentStatusLogs       (phụ thuộc: Equipments, Users)
-7.  IncidentReports           (phụ thuộc: Equipments, Rooms, Users)
-8.  MaintenanceTickets        (phụ thuộc: IncidentReports, Equipments, Users)
-9.  DisposalRequests          (phụ thuộc: Equipments, Users)
-10. Notifications             (phụ thuộc: Users)
-11. PasswordResetTokens       (phụ thuộc: Users)
-```
-
----
-
-## 4. Tổng hợp Constraints toàn hệ thống
-
-| Bảng | CHECK Constraints | Mô tả |
-|---|---|---|
-| `Users` | `CHK_Users_Role` | Role chỉ nhận 3 giá trị hợp lệ |
-| `Rooms` | `CHK_Rooms_Capacity` | Capacity > 0 |
-| `Rooms` | `CHK_Rooms_RoomType` | RoomType chỉ nhận 4 giá trị |
-| `Equipments` | `CHK_Equipments_Status` | Status theo state machine |
-| `TransferHistories` | `CHK_Transfer_Rooms` | FromRoom ≠ ToRoom |
-| `IncidentReports` | `CHK_Incident_Status` | Status theo 4 giá trị |
-| `IncidentReports` | `CHK_Incident_ResolvedAt` | ResolvedAt ≥ ReportedAt |
-| `MaintenanceTickets` | `UQ_Ticket_Incident` | 1 sự cố → tối đa 1 phiếu |
-| `MaintenanceTickets` | `CHK_Ticket_Dates` | ExpectedReturn ≥ SentDate |
-| `MaintenanceTickets` | `CHK_Ticket_EstCost` | Chi phí ≥ 0 |
-| `DisposalRequests` | `CHK_Disposal_Status` | Status 3 giá trị |
-| `DisposalRequests` | `CHK_Disposal_DecidedAt` | DecidedAt ≥ ProposedAt |
-| `Notifications` | `CHK_Notif_Type` | Type 6 giá trị |
-| `PasswordResetTokens` | `UQ_ResetToken` | Token là duy nhất toàn hệ thống |
-| `PasswordResetTokens` | `CHK_ResetToken_Expiry` | ExpiresAt > CreatedAt |
-| `PasswordResetTokens` | *(App logic)* | Tối đa 3 lần yêu cầu / 24h — kiểm tra qua `sp_CreatePasswordResetToken` |
-
----
-
-## 5. Tổng hợp Index Strategy
-
-| Bảng | Index | Mục đích | Loại |
-|---|---|---|---|
-| `Users` | `IX_Users_Email` | Đăng nhập | Filtered |
-| `Users` | `IX_Users_Role` | Lọc theo vai trò | Filtered |
-| `Equipments` | `IX_Equipments_Status` | Lọc thiết bị theo trạng thái | Non-clustered |
-| `Equipments` | `IX_Equipments_Room` | Xem thiết bị trong phòng | Filtered |
-| `Equipments` | `IX_Equipments_Warranty` | Background job cảnh báo bảo hành | Filtered |
-| `TransferHistories` | `IX_Transfer_Equipment` | Lịch sử chuyển phòng theo thiết bị | Non-clustered |
-| `EquipmentStatusLogs` | `IX_StatusLog_Equipment` | Audit trail theo thiết bị | Non-clustered |
-| `IncidentReports` | `IX_Incident_Status` | Danh sách sự cố đang xử lý | Non-clustered |
-| `IncidentReports` | `IX_Incident_Overdue` | Background job phát hiện quá hạn | Filtered |
-| `Notifications` | `IX_Notif_Unread` | Badge count thông báo chưa đọc | Non-clustered |
-| `PasswordResetTokens` | `IX_ResetToken_Token` | Tra cứu token khi user bấm link | Filtered (IsUsed=0) |
-| `PasswordResetTokens` | `IX_ResetToken_UserCreated` | Đếm số lần yêu cầu / 24h | Non-clustered |
-| `PasswordResetTokens` | `IX_ResetToken_Expiry` | Background cleanup token hết hạn | Filtered (IsUsed=0) |
-
----
-
-## 6. Stored Procedures / Views khuyến nghị
-
-### 6.1 View: Thiết bị kèm thông tin phòng và loại
-```sql
-CREATE VIEW vw_EquipmentDetails AS
-SELECT
-    e.EquipmentID,
-    e.AssetCode,
-    e.EquipmentName,
-    e.Status,
-    e.PurchaseDate,
-    e.WarrantyExpiry,
-    ec.CategoryName,
-    r.RoomCode,
-    r.RoomName,
-    u.FullName AS CreatedByName
-FROM Equipments e
-LEFT JOIN EquipmentCategories ec ON e.CategoryID = ec.CategoryID
-LEFT JOIN Rooms r                ON e.CurrentRoomID = r.RoomID
-LEFT JOIN Users u                ON e.CreatedBy = u.UserID;
-```
-
-### 6.2 View: Sự cố đang chờ xử lý (Technician Dashboard)
-```sql
-CREATE VIEW vw_PendingIncidents AS
-SELECT
-    ir.IncidentID,
-    ir.Status,
-    ir.ReportedAt,
-    ir.DueDate,
-    ir.IsOverdue,
-    e.AssetCode,
-    e.EquipmentName,
-    r.RoomCode,
-    r.RoomName,
-    u.FullName AS ReportedByName
-FROM IncidentReports ir
-JOIN Equipments e ON ir.EquipmentID = e.EquipmentID
-JOIN Rooms r      ON ir.RoomID = r.RoomID
-JOIN Users u      ON ir.ReportedBy = u.UserID
-WHERE ir.Status IN ('Pending', 'InProgress');
-```
-
-### 6.3 View: Dashboard thống kê cho Admin
-```sql
-CREATE VIEW vw_DashboardStats AS
-SELECT
-    (SELECT COUNT(*) FROM Equipments WHERE Status = 'InUse')               AS TotalInUse,
-    (SELECT COUNT(*) FROM Equipments WHERE Status = 'PendingRepair')       AS TotalPendingRepair,
-    (SELECT COUNT(*) FROM Equipments WHERE Status = 'UnderMaintenance')    AS TotalUnderMaintenance,
-    (SELECT COUNT(*) FROM Equipments WHERE Status = 'ProposedDisposal')    AS TotalProposedDisposal,
-    (SELECT COUNT(*) FROM Equipments WHERE Status = 'Disposed')            AS TotalDisposed,
-    (SELECT COUNT(*) FROM IncidentReports WHERE Status = 'Pending')        AS OpenIncidents,
-    (SELECT COUNT(*) FROM IncidentReports WHERE IsOverdue = 1)             AS OverdueIncidents,
-    (SELECT COUNT(*) FROM DisposalRequests WHERE Status = 'Pending')       AS PendingDisposals;
-```
-
----
-
-## 7. Trigger khuyến nghị
-
-### 7.1 Auto-insert EquipmentStatusLog khi Equipment thay đổi
-```sql
 CREATE TRIGGER trg_Equipment_AfterUpdate
 ON Equipments
 AFTER UPDATE
@@ -757,29 +575,4 @@ BEGIN
         WHERE ISNULL(i.WarrantyExpiry, '1900-01-01') != ISNULL(d.WarrantyExpiry, '1900-01-01');
     END
 END;
-```
-
-### 7.2 Auto-detect Overdue Incidents (có thể dùng SQL Agent Job)
-```sql
--- Chạy mỗi ngày lúc 7:00 AM qua SQL Server Agent
-UPDATE IncidentReports
-SET IsOverdue = 1
-WHERE Status IN ('Pending', 'InProgress')
-  AND DueDate < GETDATE()
-  AND IsOverdue = 0;
-```
-
----
-
-## 8. Đối chiếu với Checklist_LogicalERD
-
-| Hạng mục Checklist | Trạng thái Physical ERD |
-|---|---|
-| Kiểu dữ liệu cụ thể DBMS | ✅ SQL Server: `NVARCHAR`, `INT`, `BIT`, `DECIMAL(15,2)`, `DATETIME2(0)` |
-| CHECK Constraints đầy đủ | ✅ 13 CHECK constraints trên toàn hệ thống |
-| UNIQUE Constraints | ✅ `AssetCode`, `Email`, `UserCode`, `RoomCode`, `CategoryName`, `UQ_Ticket_Incident` |
-| Referential Integrity (ON DELETE/UPDATE) | ✅ Ghi rõ từng FK theo Logical ERD Section 3 |
-| Indexes cho query hiệu quả | ✅ 11 indexes, ưu tiên Filtered Index |
-| Thứ tự tạo bảng | ✅ Dependency order 10 bảng |
-| Views hỗ trợ nghiệp vụ | ✅ 3 views: EquipmentDetails, PendingIncidents, DashboardStats |
-| Trigger audit trail | ✅ trg_Equipment_AfterUpdate |
+GO
