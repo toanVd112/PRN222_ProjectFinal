@@ -1,46 +1,105 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - PRN_Project</title>
+    <title>@ViewData["Title"] - CEMS</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Bootstrap & Custom CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/PRN_Project.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">PRN_Project</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+    <div id="wrapper">
+        <!-- SIDEBAR -->
+        <aside id="sidebar">
+            <div class="sidebar-brand">
+                <i class='bx bx-cube-alt'></i> CEMS
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+            <ul class="sidebar-menu">
+                <li class="menu-header">Hệ thống</li>
+                <li>
+                    <a asp-controller="Home" asp-action="Index" class="active">
+                        <i class='bx bx-grid-alt'></i> Dashboard
+                    </a>
+                </li>
+                
+                <li class="menu-header">Quản trị (Admin)</li>
+                <li>
+                    <a href="#">
+                        <i class='bx bx-user-pin'></i> Quản lý Tài khoản
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class='bx bx-door-open'></i> Quản lý Phòng học
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class='bx bx-category'></i> Danh mục Thiết bị
+                    </a>
+                </li>
+                
+                <li class="menu-header">Kỹ thuật (Technician)</li>
+                <li>
+                    <a href="#">
+                        <i class='bx bx-laptop'></i> Kho Thiết bị
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class='bx bx-transfer'></i> Luân chuyển
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class='bx bx-wrench'></i> Sự cố & Bảo trì
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class='bx bx-trash-alt'></i> Thanh lý
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- MAIN CONTENT WRAPPER -->
+        <div id="content-wrapper">
+            <!-- TOPBAR -->
+            <header id="topbar">
+                <div class="topbar-left">
+                    <h4 class="mb-0">@ViewData["Title"]</h4>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-btn">
+                        <i class='bx bx-bell'></i>
+                        <span class="badge-notification">3</span>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-info text-end d-none d-md-block">
+                            <span class="user-name">Team Lead</span>
+                            <span class="user-role">Administrator</span>
+                        </div>
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=4F46E5&color=fff" alt="User Avatar">
+                    </div>
+                </div>
+            </header>
+
+            <!-- PAGE CONTENT -->
+            <main id="page-content">
+                @RenderBody()
+            </main>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - PRN_Project - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
