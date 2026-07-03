@@ -1,0 +1,84 @@
+@model PRN_Project.Models.ProfileViewModel
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Hồ sơ cá nhân</h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <form asp-controller="Profile" asp-action="Update" method="post" enctype="multipart/form-data">
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4 text-center">
+                                @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                                {
+                                    <img src="@Model.AvatarUrl" alt="Avatar" class="img-thumbnail rounded-circle mb-2" style="width: 150px; height: 150px; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <img src="/images/default-avatar.png" alt="Default Avatar" class="img-thumbnail rounded-circle mb-2" style="width: 150px; height: 150px; object-fit: cover;" />
+                                }
+                                <div class="mt-2">
+                                    <label asp-for="AvatarFile" class="form-label"></label>
+                                    <input asp-for="AvatarFile" class="form-control form-control-sm" type="file" accept=".jpg,.jpeg,.png">
+                                    <span asp-validation-for="AvatarFile" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Mã người dùng</label>
+                                    <input type="text" class="form-control bg-light" value="@Model.UserCode" readonly />
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="FullName" class="form-label fw-bold"></label>
+                                    <input asp-for="FullName" class="form-control" />
+                                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Email</label>
+                                    <input type="text" class="form-control bg-light" value="@Model.Email" readonly />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Vai trò</label>
+                                    <input type="text" class="form-control bg-light" value="@Model.Role" readonly />
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label asp-for="PhoneNumber" class="form-label fw-bold"></label>
+                                    <input asp-for="PhoneNumber" class="form-control" placeholder="Nhập số điện thoại (10 chữ số)" />
+                                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between border-top pt-3">
+                            <div>
+                                <button type="submit" class="btn btn-success px-4"><i class="bi bi-save"></i> Lưu thay đổi</button>
+                                <a asp-controller="Home" asp-action="Index" class="btn btn-secondary px-4 ms-2">Hủy</a>
+                            </div>
+                            <a href="#" class="btn btn-outline-primary" onclick="alert('Tính năng UC4 đang được phát triển!')"><i class="bi bi-key"></i> Đổi mật khẩu</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
