@@ -110,6 +110,12 @@
                         <img src="https://ui-avatars.com/api/?name=@(User.Identity?.Name ?? "Guest")&background=4F46E5&color=fff" alt="User Avatar">
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
                             <li>
+                                <a asp-controller="Profile" asp-action="Index" class="dropdown-item">
+                                    <i class='bx bx-user'></i> Hồ sơ cá nhân
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
                                 <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
                                     <button type="submit" class="dropdown-item text-danger">
                                         <i class='bx bx-log-out'></i> Đăng xuất
