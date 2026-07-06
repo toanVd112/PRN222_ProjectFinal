@@ -38,7 +38,7 @@
                 </div>
                 <form asp-controller="LecturerRooms" asp-action="Index" method="get" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-start flex-shrink-0">
                     <div style="min-width: 280px;">
-                        <select asp-for="SelectedRoomId" name="roomId" class="form-select" aria-label="Chọn phòng học">
+                        <select asp-for="SelectedRoomId" name="roomId" class="form-select" onchange="this.form.submit()" aria-label="Chọn phòng học">
                             <option value="">-- Chọn phòng học --</option>
                             @foreach (var room in Model.ActiveRooms)
                             {
@@ -54,9 +54,6 @@
                         </select>
                         <span asp-validation-for="SelectedRoomId" class="text-danger small"></span>
                     </div>
-                    <button type="submit" class="btn btn-primary-custom">
-                        <i class='bx bx-search'></i> Xem
-                    </button>
                 </form>
             </div>
 
@@ -75,7 +72,7 @@
                     </div>
                     <h5 class="fw-bold mb-2">Chưa chọn phòng học</h5>
                     <p class="text-secondary mb-0" style="max-width: 560px;">
-                        Chưa chọn phòng học. Vui lòng chọn một phòng từ danh sách phía trên và bấm nút "Xem" để hiển thị dữ liệu thiết bị.
+                        Chưa chọn phòng học. Vui lòng chọn một phòng từ danh sách phía trên để hiển thị dữ liệu thiết bị.
                     </p>
                 </div>
             }
@@ -127,11 +124,21 @@
                                         }
                                         else
                                         {
-                                            <a asp-controller="IncidentReports"
-                                               asp-action="Index"
-                                               class="btn btn-sm btn-outline-primary">
-                                                <i class='bx bx-list-check'></i> Xem tiến độ
-                                            </a>
+                                            if (equipment.PendingIncidentId.HasValue)
+                                            {
+                                                <a asp-controller="IncidentReports"
+                                                   asp-action="Details"
+                                                   asp-route-id="@equipment.PendingIncidentId"
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class='bx bx-detail'></i> Xem chi tiết
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled>
+                                                    <i class='bx bx-lock-alt'></i> Đang xử lý
+                                                </button>
+                                            }
                                         }
                                     </td>
                                 </tr>

@@ -7,6 +7,14 @@
 <div class="row g-4">
     <div class="col-12">
         <div class="card-premium">
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <span>@TempData["ErrorMessage"]</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
             <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
                 <div>
                     <h5 class="fw-bold mb-1">Lịch sử báo cáo sự cố</h5>

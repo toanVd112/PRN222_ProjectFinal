@@ -53,9 +53,9 @@
 
                 <div class="mb-3">
                     <label asp-for="Description" class="form-label fw-semibold"></label>
-                    <textarea asp-for="Description" class="form-control" rows="6" maxlength="1000"
+                    <textarea asp-for="Description" class="form-control" rows="5" maxlength="100"
                               placeholder="Ví dụ: Máy chiếu không lên hình, đèn nguồn nhấp nháy, đã thử đổi cáp HDMI nhưng vẫn không hoạt động."></textarea>
-                    <div class="form-text">Không nhập thông tin chi phí hoặc thông tin cá nhân không liên quan.</div>
+                    <div class="form-text">Tối đa 100 ký tự. Không nhập thông tin chi phí hoặc thông tin cá nhân không liên quan.</div>
                     <span asp-validation-for="Description" class="text-danger small"></span>
                 </div>
 
