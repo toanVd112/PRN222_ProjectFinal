@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -146,6 +147,57 @@ namespace PRN_Project.Controllers
             
             TempData["SuccessMessage"] = "Cập nhật hồ sơ thành công!";
             return RedirectToAction("Index");
+        }
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Verify old password
+            if (!PRN_Project.Helpers.PasswordHelper.VerifyPassword(model.OldPassword, user.PasswordHash))
+            {
+                ModelState.AddModelError("OldPassword", "Mật khẩu hiện tại không đúng.");
+                return View(model);
+            }
+
+            // Check if new password is the same as the old password
+            if (PRN_Project.Helpers.PasswordHelper.VerifyPassword(model.NewPassword, user.PasswordHash))
+            {
+                ModelState.AddModelError("NewPassword", "Mật khẩu mới không được trùng với mật khẩu hiện tại.");
+                return View(model);
+            }
+
+            // Hash and save new password
+            user.PasswordHash = PRN_Project.Helpers.PasswordHelper.HashPassword(model.NewPassword);
+            await _context.SaveChangesAsync();
+
+            // Sign out the user
+            await HttpContext.SignOutAsync(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
+
+            TempData["SuccessMessage"] = "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.";
+            return RedirectToAction("Login", "Auth");
         }
     }
 }
