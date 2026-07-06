@@ -1,0 +1,64 @@
+@model PRN_Project.Models.LecturerIncidentHistoryViewModel
+
+@{
+    ViewData["Title"] = "Báo cáo sự cố";
+}
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card-premium">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+                <div>
+                    <h5 class="fw-bold mb-1">Lịch sử báo cáo sự cố</h5>
+                    <p class="text-secondary mb-0">Theo dõi các thiết bị bạn đã báo hỏng và trạng thái xử lý hiện tại.</p>
+                </div>
+                <a asp-controller="LecturerRooms" asp-action="Index" class="btn btn-primary-custom">
+                    <i class='bx bx-plus-circle'></i> Tạo báo cáo mới
+                </a>
+            </div>
+
+            @if (!Model.Incidents.Any())
+            {
+                <div class="alert alert-secondary mb-0">
+                    Bạn chưa có báo cáo sự cố nào.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mã tài sản</th>
+                                <th>Thiết bị</th>
+                                <th>Phòng</th>
+                                <th>Mô tả</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày gửi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var incident in Model.Incidents)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@incident.AssetCode</td>
+                                    <td>@incident.EquipmentName</td>
+                                    <td>@incident.RoomDisplayName</td>
+                                    <td style="max-width: 360px;">
+                                        <span class="d-inline-block text-truncate" style="max-width: 100%;" title="@incident.Description">
+                                            @incident.Description
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @incident.StatusBadgeClass">@incident.StatusText</span>
+                                    </td>
+                                    <td>@incident.ReportedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

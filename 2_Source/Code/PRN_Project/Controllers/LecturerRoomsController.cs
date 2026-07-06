@@ -60,7 +60,8 @@ namespace PRN_Project.Controllers
                     AssetCode = equipment.AssetCode,
                     EquipmentName = equipment.EquipmentName,
                     CategoryName = equipment.Category.CategoryName,
-                    Status = equipment.Status
+                    Status = equipment.Status,
+                    HasPendingIncident = equipment.IncidentReports.Any(incident => incident.Status == "Pending")
                 })
                 .ToListAsync();
 

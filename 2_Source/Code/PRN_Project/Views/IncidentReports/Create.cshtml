@@ -1,0 +1,77 @@
+@model PRN_Project.Models.SubmitIncidentViewModel
+
+@{
+    ViewData["Title"] = "Báo cáo sự cố";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-8">
+        <div class="card-premium">
+            <div class="d-flex align-items-start gap-3 mb-4">
+                <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-circle">
+                    <i class='bx bx-error-circle fs-3'></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-1">Báo cáo thiết bị hỏng</h5>
+                    <p class="text-secondary mb-0">Mô tả rõ hiện tượng để bộ phận kỹ thuật xử lý nhanh hơn.</p>
+                </div>
+            </div>
+
+            <div class="border rounded-3 p-3 mb-4 bg-light">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Phòng học</div>
+                        <div class="fw-semibold">@Model.RoomDisplayName</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Mã tài sản</div>
+                        <div class="fw-semibold">@Model.AssetCode</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Thiết bị</div>
+                        <div class="fw-semibold">@Model.EquipmentName</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Loại thiết bị</div>
+                        <div class="fw-semibold">@Model.CategoryName</div>
+                    </div>
+                </div>
+            </div>
+
+            <form asp-controller="IncidentReports" asp-action="Create" method="post">
+                <input asp-for="EquipmentId" type="hidden" />
+                <input asp-for="RoomId" type="hidden" />
+                <input asp-for="AssetCode" type="hidden" />
+                <input asp-for="EquipmentName" type="hidden" />
+                <input asp-for="CategoryName" type="hidden" />
+                <input asp-for="RoomDisplayName" type="hidden" />
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                }
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label fw-semibold"></label>
+                    <textarea asp-for="Description" class="form-control" rows="6" maxlength="1000"
+                              placeholder="Ví dụ: Máy chiếu không lên hình, đèn nguồn nhấp nháy, đã thử đổi cáp HDMI nhưng vẫn không hoạt động."></textarea>
+                    <div class="form-text">Không nhập thông tin chi phí hoặc thông tin cá nhân không liên quan.</div>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
+
+                <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 pt-3 border-top">
+                    <a asp-controller="LecturerRooms" asp-action="Index" asp-route-roomId="@Model.RoomId" class="btn btn-outline-secondary">
+                        <i class='bx bx-arrow-back'></i> Quay lại danh sách
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class='bx bx-send'></i> Gửi báo cáo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
