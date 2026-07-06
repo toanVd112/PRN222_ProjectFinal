@@ -132,7 +132,14 @@ namespace PRN_Project.Controllers
                 user.AvatarUrl = "/uploads/avatars/" + uniqueFileName;
             }
 
-            user.FullName = model.FullName?.Trim() ?? string.Empty;
+            if (!string.IsNullOrEmpty(model.FullName))
+            {
+                user.FullName = System.Text.RegularExpressions.Regex.Replace(model.FullName.Trim(), @"\s+", " ");
+            }
+            else
+            {
+                user.FullName = string.Empty;
+            }
             user.PhoneNumber = model.PhoneNumber?.Trim();
             
             await _context.SaveChangesAsync();
