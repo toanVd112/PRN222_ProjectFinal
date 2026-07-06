@@ -1,0 +1,94 @@
+@model PRN_Project.Models.RoomEquipmentViewModel
+
+@{
+    ViewData["Title"] = "Thiết bị phòng học";
+}
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card-premium">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+                <div>
+                    <h5 class="fw-bold mb-1">Thiết bị phòng học</h5>
+                    <p class="text-secondary mb-0">Chọn một phòng đang hoạt động để xem danh sách thiết bị hiện có.</p>
+                </div>
+                <form asp-controller="LecturerRooms" asp-action="Index" method="get" class="d-flex flex-column flex-sm-row gap-2 align-items-sm-start">
+                    <div>
+                        <select asp-for="SelectedRoomId" name="roomId" class="form-select" onchange="this.form.submit()" aria-label="Chọn phòng học">
+                            <option value="">-- Chọn phòng học --</option>
+                            @foreach (var room in Model.ActiveRooms)
+                            {
+                                if (Model.SelectedRoomId == room.RoomId)
+                                {
+                                    <option value="@room.RoomId" selected>@room.DisplayName</option>
+                                }
+                                else
+                                {
+                                    <option value="@room.RoomId">@room.DisplayName</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="SelectedRoomId" class="text-danger small"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary-custom">
+                        <i class='bx bx-search'></i> Xem
+                    </button>
+                </form>
+            </div>
+
+            @if (!Model.ActiveRooms.Any())
+            {
+                <div class="alert alert-info mb-0">
+                    Hiện chưa có phòng học nào đang hoạt động.
+                </div>
+            }
+            else if (!Model.SelectedRoomId.HasValue)
+            {
+                <div class="alert alert-secondary mb-0">
+                    Vui lòng chọn phòng học để xem thiết bị.
+                </div>
+            }
+            else if (!Model.Equipments.Any())
+            {
+                <div class="alert alert-info mb-0">
+                    Hiện chưa có thiết bị nào gán vào phòng này.
+                </div>
+            }
+            else
+            {
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="text-secondary">
+                        Phòng: <span class="fw-semibold text-dark">@Model.SelectedRoomName</span>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary">@Model.Equipments.Count thiết bị</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mã tài sản</th>
+                                <th>Tên thiết bị</th>
+                                <th>Loại thiết bị</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var equipment in Model.Equipments)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@equipment.AssetCode</td>
+                                    <td>@equipment.EquipmentName</td>
+                                    <td>@equipment.CategoryName</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">@equipment.Status</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
