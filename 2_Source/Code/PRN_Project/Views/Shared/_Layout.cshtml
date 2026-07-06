@@ -4,19 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - CEMS</title>
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Boxicons -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <!-- Bootstrap & Custom CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    @{
+        // Lấy tên Controller hiện tại từ RouteData để kiểm tra trạng thái active của thanh menu
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    }
+
     <div id="wrapper">
-        <!-- SIDEBAR -->
         <aside id="sidebar">
             <div class="sidebar-brand">
                 <i class='bx bx-cube-alt'></i> CEMS
@@ -24,10 +25,11 @@
             <ul class="sidebar-menu">
                 <li class="menu-header">Hệ thống</li>
                 <li>
-                    <a asp-controller="Home" asp-action="Index" class="active">
+                    <a asp-controller="Home" asp-action="Index" class="@(currentController == "Home" ? "active" : "")">
                         <i class='bx bx-grid-alt'></i> Dashboard
                     </a>
                 </li>
+
                 @if (User.IsInRole("Admin"))
                 {
                     <li class="menu-header">Quản trị (Admin)</li>
@@ -47,7 +49,7 @@
                         </a>
                     </li>
                 }
-                
+
                 @if (User.IsInRole("Technician") || User.IsInRole("Admin"))
                 {
                     <li class="menu-header">Kỹ thuật (Technician)</li>
@@ -77,12 +79,12 @@
                 {
                     <li class="menu-header">Giảng viên (Lecturer)</li>
                     <li>
-                        <a asp-controller="LecturerRooms" asp-action="Index">
+                        <a asp-controller="LecturerRooms" asp-action="Index" class="@(currentController == "LecturerRooms" ? "active" : "")">
                             <i class='bx bx-door-open'></i> Phòng của tôi
                         </a>
                     </li>
                     <li>
-                        <a asp-controller="IncidentReports" asp-action="Index">
+                        <a asp-controller="IncidentReports" asp-action="Index" class="@(currentController == "IncidentReports" ? "active" : "")">
                             <i class='bx bx-error'></i> Báo cáo sự cố
                         </a>
                     </li>
@@ -90,9 +92,7 @@
             </ul>
         </aside>
 
-        <!-- MAIN CONTENT WRAPPER -->
         <div id="content-wrapper">
-            <!-- TOPBAR -->
             <header id="topbar">
                 <div class="topbar-left">
                     <h4 class="mb-0">@ViewData["Title"]</h4>
@@ -127,14 +127,12 @@
                 </div>
             </header>
 
-            <!-- PAGE CONTENT -->
             <main id="page-content">
                 @RenderBody()
             </main>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
