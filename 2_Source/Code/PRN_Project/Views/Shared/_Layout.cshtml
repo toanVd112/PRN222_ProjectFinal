@@ -24,7 +24,7 @@
             <ul class="sidebar-menu">
                 <li class="menu-header">Hệ thống</li>
                 <li>
-                    <a asp-controller="Home" asp-action="Index" class="active">
+                    <a asp-controller="Home" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
                         <i class='bx bx-grid-alt'></i> Dashboard
                     </a>
                 </li>
@@ -52,7 +52,7 @@
                 {
                     <li class="menu-header">Kỹ thuật (Technician)</li>
                     <li>
-                        <a href="#">
+                        <a asp-controller="Technician" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Technician" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
                             <i class='bx bx-laptop'></i> Kho Thiết bị
                         </a>
                     </li>

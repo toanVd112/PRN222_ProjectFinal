@@ -6,6 +6,7 @@
 -- Collation: Vietnamese_CI_AS
 -- ==============================================================================
 
+CREATE DATABASE PRN_Project
 USE PRN_Project;
 GO
 

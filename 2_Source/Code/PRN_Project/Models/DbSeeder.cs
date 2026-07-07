@@ -50,6 +50,33 @@ namespace PRN_Project.Models
                 context.Users.AddRange(users);
                 context.SaveChanges();
             }
+
+            if (!context.EquipmentCategories.Any())
+            {
+                var categories = new List<EquipmentCategory>
+                {
+                    new EquipmentCategory { CategoryName = "Máy chiếu", Description = "Máy chiếu treo tường và máy chiếu di động" },
+                    new EquipmentCategory { CategoryName = "Điều hòa", Description = "Hệ thống máy lạnh điều hòa nhiệt độ" },
+                    new EquipmentCategory { CategoryName = "Máy tính", Description = "Máy tính để bàn phục vụ thực hành" },
+                    new EquipmentCategory { CategoryName = "Tivi", Description = "Tivi thông minh truyền hình trình chiếu" },
+                    new EquipmentCategory { CategoryName = "Loa & Micro", Description = "Thiết bị âm thanh giảng đường" }
+                };
+                context.EquipmentCategories.AddRange(categories);
+                context.SaveChanges();
+            }
+
+            if (!context.Rooms.Any())
+            {
+                var rooms = new List<Room>
+                {
+                    new Room { RoomCode = "R101", RoomName = "Phòng Lý thuyết 101", Location = "Tầng 1 - Nhà A", Capacity = 40, RoomType = "Lý thuyết", IsActive = true, CreatedAt = DateTime.Now },
+                    new Room { RoomCode = "R102", RoomName = "Phòng Thực hành 102", Location = "Tầng 1 - Nhà A", Capacity = 30, RoomType = "Thực hành", IsActive = true, CreatedAt = DateTime.Now },
+                    new Room { RoomCode = "R201", RoomName = "Phòng Lý thuyết 201", Location = "Tầng 2 - Nhà A", Capacity = 45, RoomType = "Lý thuyết", IsActive = true, CreatedAt = DateTime.Now },
+                    new Room { RoomCode = "HTA", RoomName = "Hội trường A", Location = "Tầng 1 - Nhà B", Capacity = 150, RoomType = "Hội trường", IsActive = true, CreatedAt = DateTime.Now }
+                };
+                context.Rooms.AddRange(rooms);
+                context.SaveChanges();
+            }
         }
     }
 }

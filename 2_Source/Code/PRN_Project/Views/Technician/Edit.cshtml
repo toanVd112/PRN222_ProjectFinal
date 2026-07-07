@@ -1,0 +1,206 @@
+@model PRN_Project.Models.EquipmentFormViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa thiết bị";
+}
+
+<div class="container-fluid p-0">
+    <!-- Breadcrumb -->
+    <div class="mb-4">
+        <h3 class="mb-1 fw-bold text-dark"><i class='bx bx-edit-alt me-2 text-primary'></i>Chỉnh Sửa Thiết Bị</h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Dashboard</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Kho Thiết bị</a></li>
+                <li class="breadcrumb-item active">Chỉnh sửa</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card card-premium" style="max-width: 860px; margin: 0 auto;">
+
+        <!-- Header card: AssetCode + Status badge -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div>
+                <div class="text-muted small mb-1">Mã tài sản</div>
+                <h5 class="fw-bold text-primary mb-0">@Model.AssetCode</h5>
+            </div>
+            <div>
+                @{
+                    var (badgeClass, badgeText) = Model.Status switch {
+                        "InUse"           => ("bg-success text-white", "Đang sử dụng"),
+                        "PendingRepair"   => ("bg-warning text-dark",  "Chờ sửa"),
+                        "UnderMaintenance"=> ("bg-info text-white",    "Đang bảo trì"),
+                        "ProposedDisposal"=> ("bg-secondary text-white","Đề xuất thanh lý"),
+                        "Disposed"        => ("bg-danger text-white",   "Đã thanh lý"),
+                        _                 => ("bg-light text-dark",     Model.Status ?? "—")
+                    };
+                }
+                <span class="badge @badgeClass px-3 py-2 rounded-pill fs-sm">@badgeText</span>
+            </div>
+        </div>
+
+        <!-- Alert lỗi -->
+        @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+        {
+            <div class="alert alert-danger border-0 rounded-3 mb-4 d-flex align-items-start gap-2">
+                <i class='bx bx-error-circle fs-4 mt-1 flex-shrink-0'></i>
+                <div>
+                    <div class="fw-semibold mb-1">Vui lòng kiểm tra và sửa các lỗi bên dưới.</div>
+                    <div asp-validation-summary="All" class="small mb-0"></div>
+                </div>
+            </div>
+        }
+
+        <form asp-action="Edit" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="EquipmentId" />
+
+            <!-- === NHÓM 1: Thông tin cơ bản === -->
+            <div class="mb-3">
+                <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill">
+                    <i class='bx bx-info-circle me-1'></i> Thông tin cơ bản <span class="text-danger">*</span>
+                </span>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <!-- Mã tài sản - READONLY -->
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold small text-secondary">Mã tài sản (Chỉ đọc)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class='bx bx-lock-alt'></i></span>
+                        <input type="text" value="@Model.AssetCode" class="form-control bg-light border-start-0 fw-semibold text-primary" readonly />
+                    </div>
+                    <div class="form-text text-muted small">Mã tài sản không thể thay đổi sau khi đã nhập kho.</div>
+                </div>
+
+                <!-- Tên thiết bị -->
+                <div class="col-12 col-md-6">
+                    <label asp-for="EquipmentName" class="form-label fw-semibold small text-secondary">
+                        Tên thiết bị <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="EquipmentName" class="form-control bg-light @(ViewData.ModelState["EquipmentName"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                           placeholder="Nhập tên đầy đủ của thiết bị..." />
+                    <span asp-validation-for="EquipmentName" class="invalid-feedback d-block"></span>
+                    <div class="form-text text-muted small">Từ <strong>3 đến 150 ký tự</strong>.</div>
+                </div>
+
+                <!-- Loại thiết bị -->
+                <div class="col-12 col-md-6">
+                    <label asp-for="CategoryId" class="form-label fw-semibold small text-secondary">
+                        Loại thiết bị <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="CategoryId" class="form-select bg-light @(ViewData.ModelState["CategoryId"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                            asp-items="ViewBag.Categories">
+                        <option value="">-- Chọn loại danh mục --</option>
+                    </select>
+                    <span asp-validation-for="CategoryId" class="invalid-feedback d-block"></span>
+                </div>
+
+                <!-- Phòng học - READONLY (thay đổi qua UC18 Luân chuyển) -->
+                <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold small text-secondary">Phòng học hiện tại (Chỉ đọc)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class='bx bx-lock-alt'></i></span>
+                        <select asp-items="ViewBag.Rooms" class="form-select bg-light border-start-0" disabled>
+                            <option value="">-- Lưu kho --</option>
+                        </select>
+                    </div>
+                    <input type="hidden" asp-for="CurrentRoomId" />
+                    <div class="form-text text-muted small">
+                        <i class='bx bx-info-circle me-1'></i>Dùng chức năng <strong>Luân chuyển</strong> để đổi phòng.
+                    </div>
+                </div>
+            </div>
+
+            <!-- === NHÓM 2: Thông tin kỹ thuật === -->
+            <div class="mb-3">
+                <span class="badge bg-secondary-subtle text-secondary fw-semibold px-3 py-2 rounded-pill">
+                    <i class='bx bx-chip me-1'></i> Thông tin kỹ thuật
+                </span>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <label asp-for="SerialNumber" class="form-label fw-semibold small text-secondary">Số Serial (S/N)</label>
+                    <input asp-for="SerialNumber" class="form-control bg-light" placeholder="Ví dụ: SN-20240101-001" />
+                    <span asp-validation-for="SerialNumber" class="text-danger small"></span>
+                    <div class="form-text text-muted small">Tối đa 100 ký tự.</div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Manufacturer" class="form-label fw-semibold small text-secondary">Hãng sản xuất</label>
+                    <input asp-for="Manufacturer" class="form-control bg-light" placeholder="Ví dụ: Sony, Dell..." />
+                    <span asp-validation-for="Manufacturer" class="text-danger small"></span>
+                    <div class="form-text text-muted small">Tối đa 150 ký tự.</div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Supplier" class="form-label fw-semibold small text-secondary">Nhà cung cấp</label>
+                    <input asp-for="Supplier" class="form-control bg-light" placeholder="Tên công ty cung cấp..." />
+                    <span asp-validation-for="Supplier" class="text-danger small"></span>
+                    <div class="form-text text-muted small">Tối đa 150 ký tự.</div>
+                </div>
+            </div>
+
+            <!-- === NHÓM 3: Ngày mua & Bảo hành === -->
+            <div class="mb-3">
+                <span class="badge bg-warning-subtle text-warning fw-semibold px-3 py-2 rounded-pill">
+                    <i class='bx bx-calendar me-1'></i> Ngày mua &amp; Bảo hành
+                </span>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-4">
+                    <label asp-for="PurchaseDate" class="form-label fw-semibold small text-secondary">Ngày mua</label>
+                    <input asp-for="PurchaseDate" type="date" class="form-control bg-light" />
+                    <span asp-validation-for="PurchaseDate" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label asp-for="WarrantyExpiry" class="form-label fw-semibold small text-secondary">Hạn bảo hành</label>
+                    <input asp-for="WarrantyExpiry" type="date" class="form-control bg-light @(ViewData.ModelState["WarrantyExpiry"]?.Errors.Count > 0 ? "is-invalid" : "")" />
+                    <span asp-validation-for="WarrantyExpiry" class="invalid-feedback d-block"></span>
+                    <div class="form-text text-muted small">Phải sau hoặc bằng Ngày mua.</div>
+                </div>
+            </div>
+
+            <!-- Ghi chú -->
+            <div class="mb-4">
+                <label asp-for="Notes" class="form-label fw-semibold small text-secondary">Ghi chú</label>
+                <textarea asp-for="Notes" rows="3" class="form-control bg-light" placeholder="Ghi chú bổ sung..."></textarea>
+                <span asp-validation-for="Notes" class="text-danger small"></span>
+            </div>
+
+            <!-- Metadata -->
+            <div class="rounded-3 bg-light px-3 py-2 mb-4 text-muted small">
+                <div class="row g-1">
+                    <div class="col-12 col-md-6">
+                        <i class='bx bx-user me-1'></i>
+                        <strong>Người tạo:</strong> @(Model.CreatedByName ?? "—")
+                    </div>
+                    <div class="col-12 col-md-6 text-md-end">
+                        <i class='bx bx-calendar-check me-1'></i>
+                        <strong>Ngày tạo:</strong> @(Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                <a asp-action="Index" class="btn btn-outline-secondary px-4 fw-medium">
+                    <i class='bx bx-x me-1'></i> Hủy bỏ
+                </a>
+                <button type="submit" class="btn btn-primary-custom px-4 fw-semibold">
+                    <i class='bx bx-save me-1'></i> Lưu thay đổi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .bg-primary-subtle  { background-color: rgba(79,70,229,0.12) !important; }
+    .bg-secondary-subtle{ background-color: #e2e3e5 !important; }
+    .bg-warning-subtle  { background-color: #fff3cd !important; }
+    .text-warning       { color: #856404 !important; }
+    .fs-sm              { font-size: 0.8rem; }
+    .is-invalid         { border-color: #dc3545 !important; }
+    .invalid-feedback   { display: block !important; }
+</style>
