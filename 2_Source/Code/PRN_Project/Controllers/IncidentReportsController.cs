@@ -77,6 +77,43 @@ namespace PRN_Project.Controllers
             return View(CreateViewModel(equipment));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var incident = await _context.IncidentReports
+                .AsNoTracking()
+                .Where(item => item.IncidentId == id && item.ReportedBy == userId.Value)
+                .Select(item => new LecturerIncidentDetailViewModel
+                {
+                    IncidentId = item.IncidentId,
+                    RoomId = item.RoomId,
+                    AssetCode = item.Equipment.AssetCode,
+                    EquipmentName = item.Equipment.EquipmentName,
+                    CategoryName = item.Equipment.Category.CategoryName,
+                    RoomDisplayName = item.Room.RoomCode + " - " + item.Room.RoomName,
+                    Description = item.Description,
+                    Status = item.Status,
+                    ReportedAt = item.ReportedAt,
+                    ResolvedAt = item.ResolvedAt,
+                    ResolutionNote = item.ResolutionNote
+                })
+                .FirstOrDefaultAsync();
+
+            if (incident == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy báo cáo sự cố hoặc bạn không có quyền xem báo cáo này.";
+                return RedirectToAction("Index");
+            }
+
+            return View(incident);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(SubmitIncidentViewModel model)

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PRN_Project.Models;
+using System.Security.Claims;
 
 namespace PRN_Project.Controllers
 {
@@ -18,6 +19,7 @@ namespace PRN_Project.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(int? roomId)
         {
+            var currentUserId = GetCurrentUserId();
             var activeRooms = await _context.Rooms
                 .AsNoTracking()
                 .Where(room => room.IsActive)
@@ -61,11 +63,24 @@ namespace PRN_Project.Controllers
                     EquipmentName = equipment.EquipmentName,
                     CategoryName = equipment.Category.CategoryName,
                     Status = equipment.Status,
-                    HasPendingIncident = equipment.IncidentReports.Any(incident => incident.Status == "Pending")
+                    HasPendingIncident = equipment.IncidentReports.Any(incident => incident.Status == "Pending"),
+                    PendingIncidentId = currentUserId == null
+                        ? null
+                        : equipment.IncidentReports
+                            .Where(incident => incident.Status == "Pending" && incident.ReportedBy == currentUserId.Value)
+                            .OrderByDescending(incident => incident.ReportedAt)
+                            .Select(incident => (int?)incident.IncidentId)
+                            .FirstOrDefault()
                 })
                 .ToListAsync();
 
             return View(model);
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(userIdValue, out var userId) ? userId : null;
         }
     }
 }

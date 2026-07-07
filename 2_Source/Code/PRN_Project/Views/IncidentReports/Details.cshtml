@@ -1,0 +1,67 @@
+@model PRN_Project.Models.LecturerIncidentDetailViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết báo cáo sự cố";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-8">
+        <div class="card-premium">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
+                <div>
+                    <h5 class="fw-bold mb-1">Chi tiết báo cáo sự cố</h5>
+                    <p class="text-secondary mb-0">Thông tin báo cáo sự cố bạn đã gửi cho bộ phận kỹ thuật.</p>
+                </div>
+                <span class="badge @Model.StatusBadgeClass">@Model.StatusText</span>
+            </div>
+
+            <div class="border rounded-3 p-3 mb-4 bg-light">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Phòng học</div>
+                        <div class="fw-semibold">@Model.RoomDisplayName</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Mã tài sản</div>
+                        <div class="fw-semibold">@Model.AssetCode</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Thiết bị</div>
+                        <div class="fw-semibold">@Model.EquipmentName</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Loại thiết bị</div>
+                        <div class="fw-semibold">@Model.CategoryName</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Ngày gửi</div>
+                        <div class="fw-semibold">@Model.ReportedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Ngày xử lý</div>
+                        <div class="fw-semibold">@(Model.ResolvedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa có")</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="text-secondary small mb-1">Mô tả sự cố</div>
+                <div class="border rounded-3 p-3">@Model.Description</div>
+            </div>
+
+            <div class="mb-4">
+                <div class="text-secondary small mb-1">Ghi chú xử lý</div>
+                <div class="border rounded-3 p-3">@(string.IsNullOrWhiteSpace(Model.ResolutionNote) ? "Chưa có ghi chú xử lý." : Model.ResolutionNote)</div>
+            </div>
+
+            <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 pt-3 border-top">
+                <a asp-controller="LecturerRooms" asp-action="Index" asp-route-roomId="@Model.RoomId" class="btn btn-outline-secondary">
+                    <i class='bx bx-arrow-back'></i> Quay lại phòng học
+                </a>
+                <a asp-controller="IncidentReports" asp-action="Index" class="btn btn-outline-primary">
+                    <i class='bx bx-list-check'></i> Lịch sử báo cáo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

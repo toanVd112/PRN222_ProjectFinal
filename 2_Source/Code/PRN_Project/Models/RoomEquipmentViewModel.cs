@@ -36,6 +36,8 @@ public class RoomEquipmentItemViewModel
 
     public bool HasPendingIncident { get; set; }
 
+    public int? PendingIncidentId { get; set; }
+
     public bool CanReportIncident => Status == "InUse" && !HasPendingIncident;
 
     public string StatusText => HasPendingIncident || Status == "PendingRepair"
