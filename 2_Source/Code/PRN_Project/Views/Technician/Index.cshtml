@@ -37,7 +37,7 @@
     <!-- Filter Card -->
     <div class="card card-premium mb-4">
         <form method="get" asp-action="Index" class="row g-3 align-items-end">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-6">
                 <label class="form-label fw-semibold text-secondary small">Tìm kiếm thiết bị</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0 text-muted"><i class='bx bx-search'></i></span>
@@ -55,12 +55,6 @@
                 <select name="status" class="form-select bg-light" asp-items="ViewBag.Statuses">
                     <option value="">-- Tất cả trạng thái --</option>
                 </select>
-            </div>
-            <div class="col-12 col-md-2">
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100 fw-medium">Lọc</button>
-                    <a asp-action="Index" class="btn btn-outline-secondary w-100 fw-medium">Đặt lại</a>
-                </div>
             </div>
         </form>
     </div>
@@ -156,7 +150,12 @@
                                         <a asp-action="Edit" asp-route-id="@item.EquipmentId" class="btn btn-outline-primary btn-sm px-2.5 rounded-3 d-flex align-items-center gap-1" title="Chỉnh sửa">
                                             <i class='bx bx-edit-alt'></i> Sửa
                                         </a>
-                                        <!-- Details / History (will connect to UC21 later) -->
+                                        @if (item.Status != "Disposed" && item.Status != "ProposedDisposal")
+                                        {
+                                            <a asp-action="ProposeDisposal" asp-route-id="@item.EquipmentId" class="btn btn-outline-danger btn-sm px-2.5 rounded-3 d-flex align-items-center gap-1" title="Đề xuất thanh lý">
+                                                <i class='bx bx-trash-alt'></i> Thanh lý
+                                            </a>
+                                        }
                                         <a href="#" class="btn btn-outline-secondary btn-sm px-2.5 rounded-3 d-flex align-items-center gap-1" title="Lịch sử thay đổi">
                                             <i class='bx bx-history'></i> Lịch sử
                                         </a>
@@ -205,3 +204,48 @@
     .font-size-xs { font-size: 0.7rem; }
     .italic { font-style: italic; }
 </style>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const searchInput = document.querySelector('input[name="search"]');
+            const categorySelect = document.querySelector('select[name="categoryId"]');
+            const statusSelect = document.querySelector('select[name="status"]');
+            const filterForm = searchInput.closest('form');
+
+            let debounceTimeout;
+
+            searchInput.addEventListener('input', function () {
+                clearTimeout(debounceTimeout);
+                const value = this.value.trim();
+
+                if (value === '') {
+                    // Nếu xóa hết, điều hướng về Index (tương đương nút Đặt lại)
+                    window.location.href = '@Url.Action("Index", "Technician")';
+                    return;
+                }
+
+                debounceTimeout = setTimeout(() => {
+                    filterForm.submit();
+                }, 400); // Debounce 400ms
+            });
+
+            // Đặt con trỏ chuột ở cuối dòng input tìm kiếm sau khi tải lại trang (nếu có giá trị)
+            if (searchInput.value.length > 0) {
+                searchInput.focus();
+                const val = searchInput.value;
+                searchInput.value = '';
+                searchInput.value = val;
+            }
+
+            // Tự động submit khi thay đổi loại hoặc trạng thái
+            categorySelect.addEventListener('change', function () {
+                filterForm.submit();
+            });
+
+            statusSelect.addEventListener('change', function () {
+                filterForm.submit();
+            });
+        });
+    </script>
+}

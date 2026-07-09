@@ -235,6 +235,87 @@ namespace PRN_Project.Controllers
         }
 
         // ========================================================
+        // GET: Technician/ProposeDisposal/5 - Form đề xuất thanh lý
+        // ========================================================
+        [HttpGet]
+        public async Task<IActionResult> ProposeDisposal(int id)
+        {
+            var e = await _context.Equipments
+                .Include(x => x.CurrentRoom)
+                .Include(x => x.Category)
+                .FirstOrDefaultAsync(x => x.EquipmentId == id && x.IsActive);
+
+            if (e == null) return NotFound();
+
+            if (e.Status == "Disposed")
+            {
+                TempData["ErrorMessage"] = "Thiết bị này đã được thanh lý từ trước.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (e.Status == "ProposedDisposal")
+            {
+                TempData["ErrorMessage"] = "Thiết bị này đang trong trạng thái chờ duyệt thanh lý.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            ViewBag.Equipment = e;
+            return View();
+        }
+
+        // ========================================================
+        // POST: Technician/ProposeDisposal/5 - Lưu đề xuất thanh lý
+        // ========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProposeDisposal(int id, string reason)
+        {
+            var e = await _context.Equipments.FirstOrDefaultAsync(x => x.EquipmentId == id && x.IsActive);
+            if (e == null) return NotFound();
+
+            if (e.Status == "Disposed" || e.Status == "ProposedDisposal")
+            {
+                TempData["ErrorMessage"] = "Trạng thái thiết bị không hợp lệ để đề xuất thanh lý.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                ModelState.AddModelError("reason", "Vui lòng nhập lý do đề xuất thanh lý thiết bị.");
+                // Nạp lại thông tin liên quan
+                var orig = await _context.Equipments
+                    .Include(x => x.CurrentRoom)
+                    .Include(x => x.Category)
+                    .FirstOrDefaultAsync(x => x.EquipmentId == id);
+                ViewBag.Equipment = orig;
+                return View();
+            }
+
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return Challenge();
+
+            var request = new DisposalRequest
+            {
+                EquipmentId = id,
+                ProposedBy = userId,
+                Reason = reason.Trim(),
+                Status = "Pending",
+                ProposedAt = DateTime.Now
+            };
+
+            _context.DisposalRequests.Add(request);
+
+            e.Status = "ProposedDisposal";
+            e.UpdatedAt = DateTime.Now;
+            e.UpdatedBy = userId;
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Đã gửi đề xuất thanh lý thiết bị [{e.AssetCode}] thành công!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ========================================================
         // Helpers
         // ========================================================
         private async Task PopulateDropdowns(int? selectedCategoryId = null, int? selectedRoomId = null)

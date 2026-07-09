@@ -1,0 +1,140 @@
+@model PRN_Project.Models.DisposalRequest
+@{
+    ViewData["Title"] = "Đề xuất thanh lý";
+    var equipment = ViewBag.Equipment as PRN_Project.Models.Equipment;
+}
+
+<div class="container-fluid p-0">
+    <!-- Breadcrumb -->
+    <div class="mb-4">
+        <h3 class="mb-1 fw-bold text-dark">
+            <i class='bx bx-trash-alt me-2 text-danger'></i>Đề Xuất Thanh Lý Thiết Bị
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Dashboard</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Kho Thiết bị</a></li>
+                <li class="breadcrumb-item active">Đề xuất thanh lý</li>
+            </ol>
+        </nav>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class='bx bx-error-circle fs-4 me-2'></i>
+                <div>@TempData["ErrorMessage"]</div>
+            </div>
+        </div>
+    }
+
+    <div class="card card-premium" style="max-width: 720px; margin: 0 auto;">
+        <!-- Header: Equipment Info Summary -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div>
+                <div class="text-muted small mb-1">Mã tài sản</div>
+                <h5 class="fw-bold text-primary mb-0">@(equipment?.AssetCode ?? "—")</h5>
+            </div>
+            <div>
+                <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill fs-sm fw-bold">
+                    Đề xuất thanh lý
+                </span>
+            </div>
+        </div>
+
+        <!-- Equipment Details Table -->
+        <div class="bg-light rounded-3 p-3 mb-4">
+            <div class="row g-3">
+                <div class="col-6 col-sm-4">
+                    <span class="text-muted small d-block">Tên thiết bị</span>
+                    <strong class="text-dark">@(equipment?.EquipmentName ?? "—")</strong>
+                </div>
+                <div class="col-6 col-sm-4">
+                    <span class="text-muted small d-block">Loại thiết bị</span>
+                    <strong class="text-dark">@(equipment?.Category?.CategoryName ?? "—")</strong>
+                </div>
+                <div class="col-6 col-sm-4">
+                    <span class="text-muted small d-block">Vị trí phòng</span>
+                    <strong class="text-dark">
+                        @if (equipment?.CurrentRoom != null)
+                        {
+                            <span>@equipment.CurrentRoom.RoomName (@equipment.CurrentRoom.RoomCode)</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted italic">Chưa gán phòng</span>
+                        }
+                    </strong>
+                </div>
+                <div class="col-6 col-sm-4">
+                    <span class="text-muted small d-block">S/N</span>
+                    <strong class="text-dark">@(equipment?.SerialNumber ?? "—")</strong>
+                </div>
+                <div class="col-6 col-sm-4">
+                    <span class="text-muted small d-block">Trạng thái hiện tại</span>
+                    <strong class="text-dark">
+                        @if (equipment != null)
+                        {
+                            switch (equipment.Status)
+                            {
+                                case "InUse":
+                                    <span class="text-success">Đang sử dụng</span>
+                                    break;
+                                case "PendingRepair":
+                                    <span class="text-warning">Chờ sửa</span>
+                                    break;
+                                case "UnderMaintenance":
+                                    <span class="text-info">Đang bảo trì ngoài</span>
+                                    break;
+                                default:
+                                    <span>@equipment.Status</span>
+                                    break;
+                            }
+                        }
+                    </strong>
+                </div>
+            </div>
+        </div>
+
+        <form asp-action="ProposeDisposal" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@(equipment?.EquipmentId)" />
+
+            <!-- Input Lý do thanh lý -->
+            <div class="mb-4">
+                <label for="reason" class="form-label fw-semibold text-secondary small">
+                    Lý do đề xuất thanh lý <span class="text-danger">*</span>
+                </label>
+                <textarea id="reason" name="reason" rows="4" 
+                          class="form-control bg-light @(ViewData.ModelState["reason"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                          placeholder="Mô tả chi tiết lý do đề xuất thanh lý thiết bị (VD: Hỏng màn hình LCD không thể thay thế, chi phí sửa quá cao...)" required></textarea>
+                @if (ViewData.ModelState["reason"]?.Errors.Count > 0)
+                {
+                    <div class="invalid-feedback d-block">
+                        @ViewData.ModelState["reason"]?.Errors.FirstOrDefault()?.ErrorMessage
+                    </div>
+                }
+                <div class="form-text text-muted small mt-1">
+                    <i class='bx bx-info-circle me-1'></i> Đề xuất của bạn sẽ được gửi tới Admin để phê duyệt. Thiết bị sẽ chuyển sang trạng thái <strong>Đề xuất thanh lý</strong>.
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                <a asp-action="Index" class="btn btn-outline-secondary px-4 fw-medium">
+                    <i class='bx bx-x me-1'></i> Hủy bỏ
+                </a>
+                <button type="submit" class="btn btn-danger px-4 fw-semibold">
+                    <i class='bx bx-paper-plane me-1'></i> Gửi đề xuất
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .bg-danger-subtle { background-color: rgba(220, 38, 38, 0.12) !important; }
+    .fs-sm { font-size: 0.8rem; }
+    .italic { font-style: italic; }
+</style>
