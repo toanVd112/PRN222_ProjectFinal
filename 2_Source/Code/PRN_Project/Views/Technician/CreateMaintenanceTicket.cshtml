@@ -1,0 +1,122 @@
+@model PRN_Project.Models.MaintenanceTicket
+@{
+    ViewData["Title"] = "Lập phiếu bảo trì ngoài";
+    var incident = ViewBag.Incident as PRN_Project.Models.IncidentReport;
+}
+
+<div class="container-fluid p-0">
+    <!-- Breadcrumb -->
+    <div class="mb-4">
+        <h3 class="mb-1 fw-bold text-dark">
+            <i class='bx bx-wrench me-2 text-warning'></i>Lập Phiếu Gửi Bảo Trì Ngoài
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Dashboard</a></li>
+                <li class="breadcrumb-item"><a asp-action="Incidents" class="text-decoration-none">Sự cố báo hỏng</a></li>
+                <li class="breadcrumb-item active">Lập phiếu gửi bảo trì</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card card-premium" style="max-width: 780px; margin: 0 auto;">
+        
+        <!-- Summary Box -->
+        <div class="bg-light rounded-3 p-3 mb-4 small text-secondary">
+            <h6 class="fw-bold text-dark mb-2"><i class='bx bx-info-circle me-1'></i>Thông tin sự cố nguồn</h6>
+            <div class="row g-2">
+                <div class="col-12 col-sm-6">
+                    <strong>Thiết bị:</strong> <span class="text-dark">@(incident?.Equipment?.EquipmentName)</span>
+                </div>
+                <div class="col-12 col-sm-6">
+                    <strong>Mã tài sản:</strong> <span class="text-primary fw-medium">@(incident?.Equipment?.AssetCode)</span>
+                </div>
+                <div class="col-12 col-sm-6">
+                    <strong>Phòng học:</strong> <span class="text-dark">@(incident?.Room?.RoomName)</span>
+                </div>
+                <div class="col-12 col-sm-6">
+                    <strong>Người báo cáo:</strong> <span class="text-dark">@(incident?.ReportedByNavigation?.FullName)</span>
+                </div>
+                <div class="col-12">
+                    <strong>Mô tả sự cố:</strong> <span class="text-danger italic">@(incident?.Description)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form asp-action="CreateMaintenanceTicket" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="IncidentId" />
+            <input type="hidden" asp-for="EquipmentId" />
+
+            <div class="row g-3">
+                <!-- Đơn vị sửa chữa/bảo trì -->
+                <div class="col-12">
+                    <label asp-for="ServiceProvider" class="form-label fw-semibold text-secondary small">
+                        Đơn vị sửa chữa / Trung tâm bảo trì <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class='bx bx-buildings'></i></span>
+                        <input asp-for="ServiceProvider" class="form-control bg-light border-start-0 @(ViewData.ModelState[nameof(Model.ServiceProvider)]?.Errors.Count > 0 ? "is-invalid" : "")" 
+                               placeholder="Nhập tên công ty sửa chữa, bảo hành hoặc kỹ thuật viên bên ngoài..." required />
+                    </div>
+                    <span asp-validation-for="ServiceProvider" class="invalid-feedback d-block"></span>
+                </div>
+
+                <!-- Chi phí ước tính -->
+                <div class="col-12 col-sm-6">
+                    <label asp-for="EstimatedCost" class="form-label fw-semibold text-secondary small">Chi phí ước tính (VND)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class='bx bx-money'></i></span>
+                        <input asp-for="EstimatedCost" type="number" step="1000" class="form-control bg-light border-start-0" placeholder="Ví dụ: 500000" />
+                    </div>
+                    <span asp-validation-for="EstimatedCost" class="invalid-feedback d-block"></span>
+                </div>
+
+                <!-- Không gian trống -->
+                <div class="col-12 col-sm-6"></div>
+
+                <!-- Ngày gửi sửa -->
+                <div class="col-12 col-sm-6">
+                    <label asp-for="SentDate" class="form-label fw-semibold text-secondary small">Ngày gửi đi sửa <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class='bx bx-calendar-event'></i></span>
+                        <input asp-for="SentDate" type="date" class="form-control bg-light border-start-0" required />
+                    </div>
+                    <span asp-validation-for="SentDate" class="invalid-feedback d-block"></span>
+                </div>
+
+                <!-- Ngày dự kiến trả -->
+                <div class="col-12 col-sm-6">
+                    <label asp-for="ExpectedReturnDate" class="form-label fw-semibold text-secondary small">Ngày dự kiến hoàn thành <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i class='bx bx-calendar-check'></i></span>
+                        <input asp-for="ExpectedReturnDate" type="date" class="form-control bg-light border-start-0 @(ViewData.ModelState[nameof(Model.ExpectedReturnDate)]?.Errors.Count > 0 ? "is-invalid" : "")" required />
+                    </div>
+                    <span asp-validation-for="ExpectedReturnDate" class="invalid-feedback d-block"></span>
+                </div>
+
+                <!-- Ghi chú bảo trì -->
+                <div class="col-12">
+                    <label asp-for="Notes" class="form-label fw-semibold text-secondary small">Ghi chú chi tiết</label>
+                    <textarea asp-for="Notes" rows="3" class="form-control bg-light" placeholder="Nhập thêm ghi chú về hiện trạng gửi máy, linh kiện gửi kèm nếu có..."></textarea>
+                    <span asp-validation-for="Notes" class="invalid-feedback d-block"></span>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top mt-4">
+                <a asp-action="Incidents" class="btn btn-outline-secondary px-4 fw-medium">
+                    <i class='bx bx-x me-1'></i> Hủy bỏ
+                </a>
+                <button type="submit" class="btn btn-primary-custom px-4 fw-semibold">
+                    <i class='bx bx-save me-1'></i> Lập phiếu &amp; Gửi sửa
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .italic { font-style: italic; }
+</style>

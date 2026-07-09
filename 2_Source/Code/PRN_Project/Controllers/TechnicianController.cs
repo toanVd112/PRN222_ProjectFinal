@@ -648,6 +648,232 @@ namespace PRN_Project.Controllers
         }
 
         // ========================================================
+        // GET: Technician/Incidents - Danh sách báo cáo sự cố
+        // ========================================================
+        [HttpGet]
+        public async Task<IActionResult> Incidents(string? search, string? status)
+        {
+            var query = _context.IncidentReports
+                .Include(i => i.Equipment)
+                .Include(i => i.Room)
+                .Include(i => i.ReportedByNavigation)
+                .Include(i => i.AssignedToNavigation)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.Trim();
+                query = query.Where(i =>
+                    i.Equipment.AssetCode.Contains(search) ||
+                    i.Equipment.EquipmentName.Contains(search) ||
+                    i.Room.RoomName.Contains(search) ||
+                    i.Description.Contains(search));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(i => i.Status == status);
+            }
+
+            var list = await query.OrderByDescending(i => i.ReportedAt).ToListAsync();
+
+            ViewBag.Statuses = new SelectList(new List<SelectListItem>
+            {
+                new() { Value = "Pending", Text = "Chờ xử lý" },
+                new() { Value = "InProgress", Text = "Đang xử lý" },
+                new() { Value = "Resolved", Text = "Đã khắc phục" }
+            }, "Value", "Text", status);
+
+            return View(list);
+        }
+
+        // ========================================================
+        // POST: Technician/ResolveIncident/5 - Đóng sự cố, thiết bị hoạt động lại
+        // ========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResolveIncident(int id, string resolutionNote)
+        {
+            var incident = await _context.IncidentReports
+                .Include(i => i.Equipment)
+                .Include(i => i.Room)
+                .FirstOrDefaultAsync(i => i.IncidentId == id);
+
+            if (incident == null) return NotFound();
+
+            if (incident.Status == "Resolved")
+            {
+                TempData["ErrorMessage"] = "Sự cố này đã được giải quyết từ trước.";
+                return RedirectToAction(nameof(Incidents));
+            }
+
+            if (string.IsNullOrWhiteSpace(resolutionNote))
+            {
+                TempData["ErrorMessage"] = "Vui lòng cung cấp nội dung giải quyết sự cố.";
+                return RedirectToAction(nameof(Incidents));
+            }
+
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return Challenge();
+
+            // Cập nhật sự cố
+            incident.Status = "Resolved";
+            incident.ResolvedAt = DateTime.Now;
+            incident.ResolutionNote = resolutionNote.Trim();
+            incident.AssignedTo = userId;
+
+            // Cập nhật thiết bị tương ứng về hoạt động
+            var equipment = incident.Equipment;
+            if (equipment != null && equipment.Status != "Disposed")
+            {
+                // Ghi nhận status log cho thiết bị
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    FieldChanged = "Status",
+                    OldStatus = equipment.Status,
+                    NewStatus = "InUse",
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.Now,
+                    ChangeReason = $"Khắc phục sự cố hỏng hóc: {resolutionNote.Trim()}"
+                });
+
+                equipment.Status = "InUse";
+                equipment.UpdatedAt = DateTime.Now;
+                equipment.UpdatedBy = userId;
+            }
+
+            // Gửi thông báo đến giảng viên báo cáo (UC_SendNotification)
+            _context.Notifications.Add(new Notification
+            {
+                RecipientId = incident.ReportedBy,
+                Title = "Báo cáo sự cố đã được xử lý",
+                Message = $"Sự cố báo hỏng thiết bị [{equipment?.AssetCode}] tại phòng [{incident.Room.RoomName}] đã được khắc phục. Nội dung giải quyết: {resolutionNote.Trim()}.",
+                Type = "System",
+                IsRead = false,
+                SentAt = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Đã xác nhận giải quyết sự cố cho thiết bị [{equipment?.AssetCode}]!";
+            return RedirectToAction(nameof(Incidents));
+        }
+
+        // ========================================================
+        // GET: Technician/CreateMaintenanceTicket - Form lập phiếu bảo trì ngoài
+        // ========================================================
+        [HttpGet]
+        public async Task<IActionResult> CreateMaintenanceTicket(int incidentId)
+        {
+            var incident = await _context.IncidentReports
+                .Include(i => i.Equipment)
+                .Include(i => i.Room)
+                .FirstOrDefaultAsync(i => i.IncidentId == incidentId);
+
+            if (incident == null) return NotFound();
+
+            if (incident.Status == "Resolved")
+            {
+                TempData["ErrorMessage"] = "Sự cố này đã được giải quyết, không thể lập phiếu bảo trì ngoài.";
+                return RedirectToAction(nameof(Incidents));
+            }
+
+            ViewBag.Incident = incident;
+
+            // Mặc định ngày gửi là hôm nay, hẹn trả sau 7 ngày
+            var model = new MaintenanceTicket
+            {
+                IncidentId = incidentId,
+                EquipmentId = incident.EquipmentId,
+                SentDate = DateOnly.FromDateTime(DateTime.Today),
+                ExpectedReturnDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7))
+            };
+
+            return View(model);
+        }
+
+        // ========================================================
+        // POST: Technician/CreateMaintenanceTicket - Lưu phiếu bảo trì ngoài
+        // ========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateMaintenanceTicket(MaintenanceTicket model)
+        {
+            var incident = await _context.IncidentReports
+                .Include(i => i.Equipment)
+                .Include(i => i.Room)
+                .FirstOrDefaultAsync(i => i.IncidentId == model.IncidentId);
+
+            if (incident == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(model.ServiceProvider))
+            {
+                ModelState.AddModelError(nameof(model.ServiceProvider), "Vui lòng nhập đơn vị sửa chữa/bảo trì.");
+            }
+
+            if (model.ExpectedReturnDate < model.SentDate)
+            {
+                ModelState.AddModelError(nameof(model.ExpectedReturnDate), "Ngày dự kiến hoàn thành phải sau hoặc bằng Ngày gửi sửa.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Incident = incident;
+                return model.IncidentId == 0 ? RedirectToAction(nameof(Incidents)) : View(model);
+            }
+
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return Challenge();
+
+            var ticket = new MaintenanceTicket
+            {
+                IncidentId = model.IncidentId,
+                EquipmentId = incident.EquipmentId,
+                CreatedBy = userId,
+                ServiceProvider = model.ServiceProvider.Trim(),
+                EstimatedCost = model.EstimatedCost,
+                SentDate = model.SentDate,
+                ExpectedReturnDate = model.ExpectedReturnDate,
+                Status = "Sent",
+                Notes = model.Notes?.Trim(),
+                CreatedAt = DateTime.Now
+            };
+
+            _context.MaintenanceTickets.Add(ticket);
+
+            // Cập nhật trạng thái sự cố sang InProgress và gán cho kỹ thuật viên
+            incident.Status = "InProgress";
+            incident.AssignedTo = userId;
+
+            // Cập nhật trạng thái thiết bị sang UnderMaintenance
+            var equipment = incident.Equipment;
+            if (equipment != null && equipment.Status != "Disposed")
+            {
+                // Ghi log trạng thái
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    FieldChanged = "Status",
+                    OldStatus = equipment.Status,
+                    NewStatus = "UnderMaintenance",
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.Now,
+                    ChangeReason = $"Gửi bảo trì ngoài qua đơn vị: {model.ServiceProvider.Trim()}"
+                });
+
+                equipment.Status = "UnderMaintenance";
+                equipment.UpdatedAt = DateTime.Now;
+                equipment.UpdatedBy = userId;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Đã lập phiếu gửi bảo trì ngoài thành công cho thiết bị [{equipment?.AssetCode}]!";
+            return RedirectToAction(nameof(Incidents));
+        }
+
+        // ========================================================
         // Helpers
         // ========================================================
         private async Task PopulateDropdowns(int? selectedCategoryId = null, int? selectedRoomId = null)
