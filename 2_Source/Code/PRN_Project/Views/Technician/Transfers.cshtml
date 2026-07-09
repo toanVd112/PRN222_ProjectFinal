@@ -1,42 +1,25 @@
 @model IEnumerable<PRN_Project.Models.VwEquipmentDetail>
 @{
-    ViewData["Title"] = "Kho Thiết bị";
+    ViewData["Title"] = "Điều chuyển thiết bị";
 }
 
 <div class="container-fluid p-0">
     <!-- Header Page -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="mb-1 fw-bold text-dark">Kho Quản Lý Thiết Bị</h3>
+            <h3 class="mb-1 fw-bold text-dark">Quản Lý Luân Chuyển Thiết Bị</h3>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Dashboard</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Kho Thiết bị</li>
+                    <li class="breadcrumb-item active" aria-current="page">Luân chuyển thiết bị</li>
                 </ol>
             </nav>
         </div>
-        <div>
-            <a asp-action="Create" class="btn btn-primary-custom">
-                <i class='bx bx-plus-circle me-1'></i> Thêm thiết bị mới
-            </a>
-        </div>
     </div>
-
-    <!-- Alert Success -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
-            <div class="d-flex align-items-center">
-                <i class='bx bx-check-circle fs-4 me-2'></i>
-                <div>@TempData["SuccessMessage"]</div>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
 
     <!-- Filter Card -->
     <div class="card card-premium mb-4">
-        <form method="get" asp-action="Index" class="row g-3 align-items-end">
+        <form method="get" asp-action="Transfers" class="row g-3 align-items-end">
             <div class="col-12 col-md-6">
                 <label class="form-label fw-semibold text-secondary small">Tìm kiếm thiết bị</label>
                 <div class="input-group">
@@ -68,11 +51,10 @@
                         <th class="border-0 ps-3">Mã tài sản</th>
                         <th class="border-0">Tên thiết bị</th>
                         <th class="border-0">Loại thiết bị</th>
-                        <th class="border-0">Vị trí phòng</th>
-                        <th class="border-0">Ngày mua</th>
+                        <th class="border-0">Vị trí phòng hiện tại</th>
                         <th class="border-0">Hạn bảo hành</th>
                         <th class="border-0">Trạng thái</th>
-                        <th class="border-0 text-center pe-3" style="width: 150px;">Thao tác</th>
+                        <th class="border-0 text-center pe-3" style="width: 250px;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -104,17 +86,12 @@
                                         <span class="text-muted italic"><i class='bx bx-archive-in me-1'></i>Chưa gán phòng</span>
                                     }
                                 </td>
-                                <td>@(item.PurchaseDate?.ToString("dd/MM/yyyy") ?? "-")</td>
                                 <td>
                                     @if (item.WarrantyExpiry.HasValue)
                                     {
                                         var isExpired = item.WarrantyExpiry.Value < DateOnly.FromDateTime(DateTime.Today);
                                         <span class="@(isExpired ? "text-danger fw-medium" : "text-dark")">
                                             @item.WarrantyExpiry.Value.ToString("dd/MM/yyyy")
-                                            @if (isExpired)
-                                            {
-                                                <small class="d-block text-danger font-size-xs">(Hết hạn)</small>
-                                            }
                                         </span>
                                     }
                                     else
@@ -137,9 +114,6 @@
                                         case "ProposedDisposal":
                                             <span class="badge bg-secondary-subtle text-secondary px-2 py-1.5 border border-secondary-subtle rounded-pill">Đề xuất thanh lý</span>
                                             break;
-                                        case "Disposed":
-                                            <span class="badge bg-danger-subtle text-danger px-2 py-1.5 border border-danger-subtle rounded-pill">Đã thanh lý</span>
-                                            break;
                                         default:
                                             <span class="badge bg-light text-dark px-2 py-1.5 rounded-pill">@item.Status</span>
                                             break;
@@ -147,17 +121,11 @@
                                 </td>
                                 <td class="text-center pe-3">
                                     <div class="d-flex justify-content-center gap-2">
-                                        <a asp-action="Edit" asp-route-id="@item.EquipmentId" class="btn btn-outline-primary btn-sm px-2.5 rounded-3 d-flex align-items-center gap-1" title="Chỉnh sửa">
-                                            <i class='bx bx-edit-alt'></i> Sửa
+                                        <a asp-action="Transfer" asp-route-id="@item.EquipmentId" class="btn btn-outline-info btn-sm px-2.5 rounded-3 d-flex align-items-center gap-1" title="Điều chuyển phòng">
+                                            <i class='bx bx-transfer'></i> Điều chuyển
                                         </a>
-                                        @if (item.Status != "Disposed" && item.Status != "ProposedDisposal")
-                                        {
-                                            <a asp-action="ProposeDisposal" asp-route-id="@item.EquipmentId" class="btn btn-outline-danger btn-sm px-2.5 rounded-3 d-flex align-items-center gap-1" title="Đề xuất thanh lý">
-                                                <i class='bx bx-trash-alt'></i> Thanh lý
-                                            </a>
-                                        }
-                                        <a asp-action="RepairHistory" asp-route-id="@item.EquipmentId" class="btn btn-outline-secondary btn-sm px-2.5 rounded-3 d-flex align-items-center gap-1" title="Lịch sử thay đổi">
-                                            <i class='bx bx-history'></i> Lịch sử
+                                        <a asp-action="TransferHistory" asp-route-id="@item.EquipmentId" class="btn btn-outline-secondary btn-sm px-2.5 rounded-3 d-flex align-items-center gap-1" title="Lịch sử điều chuyển">
+                                            <i class='bx bx-history'></i> Lịch sử luân chuyển
                                         </a>
                                     </div>
                                 </td>
@@ -167,7 +135,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
+                            <td colspan="7" class="text-center py-5 text-muted">
                                 <i class='bx bx-info-circle fs-1 mb-2 d-block text-secondary'></i>
                                 Không tìm thấy thiết bị nào khớp với bộ lọc tìm kiếm.
                             </td>
@@ -193,10 +161,6 @@
     .text-info { color: #055160 !important; }
     .border-info-subtle { border-color: #9eeaf9 !important; }
 
-    .bg-danger-subtle { background-color: #f8d7da !important; }
-    .text-danger { color: #842029 !important; }
-    .border-danger-subtle { border-color: #f1aeb5 !important; }
-
     .bg-secondary-subtle { background-color: #e2e3e5 !important; }
     .text-secondary { color: #41464b !important; }
     .border-secondary-subtle { border-color: #c4c8cb !important; }
@@ -220,8 +184,8 @@
                 const value = this.value.trim();
 
                 if (value === '') {
-                    // Nếu xóa hết, điều hướng về Index (tương đương nút Đặt lại)
-                    window.location.href = '@Url.Action("Index", "Technician")';
+                    // Nếu xóa hết, điều hướng về Transfers (tương đương nút Đặt lại)
+                    window.location.href = '@Url.Action("Transfers", "Technician")';
                     return;
                 }
 
@@ -230,7 +194,7 @@
                 }, 400); // Debounce 400ms
             });
 
-            // Đặt con trỏ chuột ở cuối dòng input tìm kiếm sau khi tải lại trang (nếu có giá trị)
+            // Đặt con trỏ chuột ở cuối dòng input tìm kiếm sau khi tải lại trang
             if (searchInput.value.length > 0) {
                 searchInput.focus();
                 const val = searchInput.value;

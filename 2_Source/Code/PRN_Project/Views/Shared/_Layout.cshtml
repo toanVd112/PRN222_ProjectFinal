@@ -57,7 +57,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a asp-controller="Technician" asp-action="Transfers" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Technician" && ViewContext.RouteData.Values["action"]?.ToString() == "Transfers" ? "active" : "")">
                             <i class='bx bx-transfer'></i> Luân chuyển
                         </a>
                     </li>

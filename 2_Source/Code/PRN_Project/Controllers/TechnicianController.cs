@@ -217,6 +217,138 @@ namespace PRN_Project.Controllers
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId)) return Challenge();
 
+            // Ghi log lịch sử thay đổi các trường dữ liệu (Audit Trail)
+            if (equipment.EquipmentName != vm.EquipmentName.Trim())
+            {
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    FieldChanged = "Tên thiết bị",
+                    OldValue = equipment.EquipmentName,
+                    NewValue = vm.EquipmentName.Trim(),
+                    OldStatus = equipment.Status,
+                    NewStatus = equipment.Status,
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.Now,
+                    ChangeReason = "Cập nhật tên thiết bị"
+                });
+            }
+
+            if (equipment.CategoryId != vm.CategoryId)
+            {
+                var oldCategory = await _context.EquipmentCategories.FindAsync(equipment.CategoryId);
+                var newCategory = await _context.EquipmentCategories.FindAsync(vm.CategoryId);
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    FieldChanged = "Loại thiết bị",
+                    OldValue = oldCategory?.CategoryName ?? "Trống",
+                    NewValue = newCategory?.CategoryName ?? "Trống",
+                    OldStatus = equipment.Status,
+                    NewStatus = equipment.Status,
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.Now,
+                    ChangeReason = "Thay đổi loại danh mục thiết bị"
+                });
+            }
+
+            if ((equipment.SerialNumber ?? "") != (vm.SerialNumber?.Trim() ?? ""))
+            {
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    FieldChanged = "Số Serial (S/N)",
+                    OldValue = string.IsNullOrEmpty(equipment.SerialNumber) ? "Trống" : equipment.SerialNumber,
+                    NewValue = string.IsNullOrEmpty(vm.SerialNumber) ? "Trống" : vm.SerialNumber.Trim(),
+                    OldStatus = equipment.Status,
+                    NewStatus = equipment.Status,
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.Now,
+                    ChangeReason = "Cập nhật số Serial"
+                });
+            }
+
+            if ((equipment.Manufacturer ?? "") != (vm.Manufacturer?.Trim() ?? ""))
+            {
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    FieldChanged = "Hãng sản xuất",
+                    OldValue = string.IsNullOrEmpty(equipment.Manufacturer) ? "Trống" : equipment.Manufacturer,
+                    NewValue = string.IsNullOrEmpty(vm.Manufacturer) ? "Trống" : vm.Manufacturer.Trim(),
+                    OldStatus = equipment.Status,
+                    NewStatus = equipment.Status,
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.Now,
+                    ChangeReason = "Cập nhật hãng sản xuất"
+                });
+            }
+
+            if ((equipment.Supplier ?? "") != (vm.Supplier?.Trim() ?? ""))
+            {
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    FieldChanged = "Nhà cung cấp",
+                    OldValue = string.IsNullOrEmpty(equipment.Supplier) ? "Trống" : equipment.Supplier,
+                    NewValue = string.IsNullOrEmpty(vm.Supplier) ? "Trống" : vm.Supplier.Trim(),
+                    OldStatus = equipment.Status,
+                    NewStatus = equipment.Status,
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.Now,
+                    ChangeReason = "Cập nhật nhà cung cấp"
+                });
+            }
+
+            if (equipment.PurchaseDate != vm.PurchaseDate)
+            {
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    FieldChanged = "Ngày mua",
+                    OldValue = equipment.PurchaseDate?.ToString("dd/MM/yyyy") ?? "Trống",
+                    NewValue = vm.PurchaseDate?.ToString("dd/MM/yyyy") ?? "Trống",
+                    OldStatus = equipment.Status,
+                    NewStatus = equipment.Status,
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.Now,
+                    ChangeReason = "Cập nhật ngày mua thiết bị"
+                });
+            }
+
+            // Ghi log qua C# thay thế/bổ trợ cho trigger phòng trường hợp trigger bỏ sót thay đổi từ NULL
+            if (equipment.WarrantyExpiry != vm.WarrantyExpiry)
+            {
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    FieldChanged = "Hạn bảo hành",
+                    OldValue = equipment.WarrantyExpiry?.ToString("dd/MM/yyyy") ?? "Trống",
+                    NewValue = vm.WarrantyExpiry?.ToString("dd/MM/yyyy") ?? "Trống",
+                    OldStatus = equipment.Status,
+                    NewStatus = equipment.Status,
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.Now,
+                    ChangeReason = "Cập nhật hạn bảo hành thiết bị"
+                });
+            }
+
+            if ((equipment.Notes ?? "") != (vm.Notes?.Trim() ?? ""))
+            {
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    FieldChanged = "Ghi chú",
+                    OldValue = string.IsNullOrEmpty(equipment.Notes) ? "Trống" : equipment.Notes,
+                    NewValue = string.IsNullOrEmpty(vm.Notes) ? "Trống" : vm.Notes.Trim(),
+                    OldStatus = equipment.Status,
+                    NewStatus = equipment.Status,
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.Now,
+                    ChangeReason = "Cập nhật ghi chú"
+                });
+            }
+
             equipment.EquipmentName  = vm.EquipmentName.Trim();
             equipment.CategoryId     = vm.CategoryId;
             equipment.SerialNumber   = vm.SerialNumber?.Trim();
@@ -313,6 +445,206 @@ namespace PRN_Project.Controllers
 
             TempData["SuccessMessage"] = $"Đã gửi đề xuất thanh lý thiết bị [{e.AssetCode}] thành công!";
             return RedirectToAction(nameof(Index));
+        }
+
+        // ========================================================
+        // GET: Technician/Transfer/5 - Form điều chuyển vị trí
+        // ========================================================
+        [HttpGet]
+        public async Task<IActionResult> Transfer(int id)
+        {
+            var e = await _context.Equipments
+                .Include(x => x.CurrentRoom)
+                .Include(x => x.Category)
+                .FirstOrDefaultAsync(x => x.EquipmentId == id && x.IsActive);
+
+            if (e == null) return NotFound();
+
+            if (e.Status == "Disposed")
+            {
+                TempData["ErrorMessage"] = "Không thể điều chuyển thiết bị đã thanh lý.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var rooms = await _context.Rooms.Where(r => r.IsActive).OrderBy(r => r.RoomName).ToListAsync();
+            ViewBag.Rooms = new SelectList(rooms, "RoomId", "RoomName", e.CurrentRoomId);
+            ViewBag.Equipment = e;
+
+            return View();
+        }
+
+        // ========================================================
+        // POST: Technician/Transfer/5 - Thực hiện điều chuyển
+        // ========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Transfer(int id, int targetRoomId, string reason)
+        {
+            var e = await _context.Equipments.FirstOrDefaultAsync(x => x.EquipmentId == id && x.IsActive);
+            if (e == null) return NotFound();
+
+            if (e.Status == "Disposed")
+            {
+                TempData["ErrorMessage"] = "Không thể điều chuyển thiết bị đã thanh lý.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (e.CurrentRoomId == targetRoomId)
+            {
+                ModelState.AddModelError("targetRoomId", "Thiết bị đang ở phòng này.");
+                var rooms = await _context.Rooms.Where(r => r.IsActive).OrderBy(r => r.RoomName).ToListAsync();
+                ViewBag.Rooms = new SelectList(rooms, "RoomId", "RoomName", targetRoomId);
+                var orig = await _context.Equipments
+                    .Include(x => x.CurrentRoom)
+                    .Include(x => x.Category)
+                    .FirstOrDefaultAsync(x => x.EquipmentId == id);
+                ViewBag.Equipment = orig;
+                return View();
+            }
+
+            var targetRoom = await _context.Rooms.FindAsync(targetRoomId);
+            if (targetRoom == null || !targetRoom.IsActive)
+            {
+                ModelState.AddModelError("targetRoomId", "Phòng đích không hợp lệ hoặc không hoạt động.");
+                var rooms = await _context.Rooms.Where(r => r.IsActive).OrderBy(r => r.RoomName).ToListAsync();
+                ViewBag.Rooms = new SelectList(rooms, "RoomId", "RoomName", targetRoomId);
+                var orig = await _context.Equipments
+                    .Include(x => x.CurrentRoom)
+                    .Include(x => x.Category)
+                    .FirstOrDefaultAsync(x => x.EquipmentId == id);
+                ViewBag.Equipment = orig;
+                return View();
+            }
+
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return Challenge();
+
+            // Lưu log TransferHistory
+            var history = new TransferHistory
+            {
+                EquipmentId = id,
+                FromRoomId = e.CurrentRoomId,
+                ToRoomId = targetRoomId,
+                TransferredBy = userId,
+                TransferDate = DateTime.Now,
+                Reason = string.IsNullOrWhiteSpace(reason) ? "Điều chuyển phòng học định kỳ." : reason.Trim()
+            };
+
+            _context.TransferHistories.Add(history);
+
+            // Cập nhật vị trí hiện tại
+            e.CurrentRoomId = targetRoomId;
+            e.UpdatedAt = DateTime.Now;
+            e.UpdatedBy = userId;
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Điều chuyển thiết bị [{e.AssetCode}] sang phòng [{targetRoom.RoomName}] thành công!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ========================================================
+        // GET: Technician/Transfers - Danh sách thiết bị luân chuyển vị trí
+        // ========================================================
+        [HttpGet]
+        public async Task<IActionResult> Transfers(string? search, int? categoryId, string? status)
+        {
+            ViewBag.Categories = new SelectList(
+                await _context.EquipmentCategories.OrderBy(c => c.CategoryName).ToListAsync(),
+                "CategoryId", "CategoryName", categoryId);
+
+            ViewBag.Statuses = new SelectList(StatusList(), "Value", "Text", status);
+
+            // Chỉ hiển thị thiết bị chưa thanh lý
+            var query = _context.VwEquipmentDetails.Where(e => e.Status != "Disposed");
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.Trim();
+                query = query.Where(e =>
+                    e.AssetCode.Contains(search) ||
+                    e.EquipmentName.Contains(search) ||
+                    (e.RoomName != null && e.RoomName.Contains(search)));
+            }
+
+            if (categoryId.HasValue)
+            {
+                var cat = await _context.EquipmentCategories.FindAsync(categoryId.Value);
+                if (cat != null)
+                    query = query.Where(e => e.CategoryName == cat.CategoryName);
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+                query = query.Where(e => e.Status == status);
+
+            var list = await query.OrderByDescending(e => e.EquipmentId).ToListAsync();
+            return View(list);
+        }
+
+        // ========================================================
+        // GET: Technician/TransferHistory/5 - Lịch sử điều chuyển riêng của thiết bị
+        // ========================================================
+        [HttpGet]
+        public async Task<IActionResult> TransferHistory(int id)
+        {
+            var e = await _context.Equipments
+                .Include(x => x.CurrentRoom)
+                .Include(x => x.Category)
+                .FirstOrDefaultAsync(x => x.EquipmentId == id && x.IsActive);
+
+            if (e == null) return NotFound();
+
+            var list = await _context.TransferHistories
+                .Include(t => t.FromRoom)
+                .Include(t => t.ToRoom)
+                .Include(t => t.TransferredByNavigation)
+                .Where(t => t.EquipmentId == id)
+                .OrderByDescending(t => t.TransferDate)
+                .ToListAsync();
+
+            ViewBag.Equipment = e;
+            return View(list);
+        }
+
+        // ========================================================
+        // GET: Technician/RepairHistory/5 - Lịch sử sửa chữa/bảo trì riêng của thiết bị
+        // ========================================================
+        [HttpGet]
+        public async Task<IActionResult> RepairHistory(int id)
+        {
+            var e = await _context.Equipments
+                .Include(x => x.CurrentRoom)
+                .Include(x => x.Category)
+                .FirstOrDefaultAsync(x => x.EquipmentId == id && x.IsActive);
+
+            if (e == null) return NotFound();
+
+            var incidents = await _context.IncidentReports
+                .Include(i => i.ReportedByNavigation)
+                .Include(i => i.AssignedToNavigation)
+                .Include(i => i.Room)
+                .Where(i => i.EquipmentId == id)
+                .OrderByDescending(i => i.ReportedAt)
+                .ToListAsync();
+
+            var tickets = await _context.MaintenanceTickets
+                .Include(m => m.CreatedByNavigation)
+                .Where(m => m.EquipmentId == id)
+                .OrderByDescending(m => m.CreatedAt)
+                .ToListAsync();
+
+            var statusLogs = await _context.EquipmentStatusLogs
+                .Include(l => l.ChangedByNavigation)
+                .Where(l => l.EquipmentId == id)
+                .OrderByDescending(l => l.ChangedAt)
+                .ToListAsync();
+
+            ViewBag.Equipment = e;
+            ViewBag.Incidents = incidents;
+            ViewBag.Tickets = tickets;
+            ViewBag.StatusLogs = statusLogs;
+
+            return View();
         }
 
         // ========================================================

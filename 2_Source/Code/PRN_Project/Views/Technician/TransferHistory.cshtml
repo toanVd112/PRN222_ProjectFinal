@@ -1,0 +1,103 @@
+@model IEnumerable<PRN_Project.Models.TransferHistory>
+@{
+    ViewData["Title"] = "Lịch sử luân chuyển";
+    var e = ViewBag.Equipment as PRN_Project.Models.Equipment;
+}
+
+<div class="container-fluid p-0">
+    <!-- Breadcrumb -->
+    <div class="mb-4">
+        <h3 class="mb-1 fw-bold text-dark">
+            <i class='bx bx-history me-2 text-primary'></i>Lịch Sử Luân Chuyển Thiết Bị
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Dashboard</a></li>
+                <li class="breadcrumb-item"><a asp-action="Transfers" class="text-decoration-none">Luân chuyển</a></li>
+                <li class="breadcrumb-item active">Lịch sử luân chuyển</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card card-premium" style="max-width: 960px; margin: 0 auto;">
+        <!-- Header: Equipment Summary -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div>
+                <div class="text-muted small mb-1">Mã tài sản</div>
+                <h5 class="fw-bold text-primary mb-0">@(e?.AssetCode ?? "—")</h5>
+            </div>
+            <div>
+                <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fs-sm fw-medium">
+                    @(e?.EquipmentName)
+                </span>
+            </div>
+        </div>
+
+        <!-- Timeline Log of Transfers -->
+        <h5 class="fw-bold mb-3"><i class='bx bx-git-commit me-1 text-primary'></i>Nhật ký luân chuyển vị trí</h5>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3" style="width: 180px;">Thời gian</th>
+                        <th>Từ phòng</th>
+                        <th>Đến phòng</th>
+                        <th>Người thực hiện</th>
+                        <th class="pe-3">Lý do điều chuyển</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-semibold">@item.TransferDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @if (item.FromRoom != null)
+                                    {
+                                        <span class="text-muted"><i class='bx bx-door-open me-1'></i>@item.FromRoom.RoomName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted italic"><i class='bx bx-plus-circle me-1'></i>Nhập kho lần đầu</span>
+                                    }
+                                </td>
+                                <td>
+                                    <strong class="text-primary"><i class='bx bx-door-open me-1'></i>@item.ToRoom.RoomName</strong>
+                                </td>
+                                <td>
+                                    <i class='bx bx-user me-1 text-secondary'></i>
+                                    <span>@item.TransferredByNavigation.FullName</span>
+                                </td>
+                                <td class="pe-3 text-secondary">@item.Reason</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class='bx bx-info-circle fs-1 mb-2 d-block text-secondary'></i>
+                                Thiết bị này chưa từng được điều chuyển vị trí.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Back Button -->
+        <div class="d-flex justify-content-end pt-3 border-top mt-4">
+            <a asp-action="Transfers" class="btn btn-outline-secondary px-4 fw-medium">
+                <i class='bx bx-arrow-back me-1'></i> Quay lại
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fs-sm { font-size: 0.8rem; }
+    .italic { font-style: italic; }
+</style>

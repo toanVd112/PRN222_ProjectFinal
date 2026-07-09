@@ -1,0 +1,289 @@
+@{
+    ViewData["Title"] = "Lịch sử sửa chữa";
+    var e = ViewBag.Equipment as PRN_Project.Models.Equipment;
+    var incidents = ViewBag.Incidents as IEnumerable<PRN_Project.Models.IncidentReport>;
+    var tickets = ViewBag.Tickets as IEnumerable<PRN_Project.Models.MaintenanceTicket>;
+    var statusLogs = ViewBag.StatusLogs as IEnumerable<PRN_Project.Models.EquipmentStatusLog>;
+}
+
+<div class="container-fluid p-0">
+    <!-- Breadcrumb -->
+    <div class="mb-4">
+        <h3 class="mb-1 fw-bold text-dark">
+            <i class='bx bx-history me-2 text-primary'></i>Lịch Sử Thay Đổi &amp; Sửa Chữa
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none">Dashboard</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Kho Thiết bị</a></li>
+                <li class="breadcrumb-item active">Lịch sử thay đổi</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card card-premium" style="max-width: 980px; margin: 0 auto;">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div>
+                <div class="text-muted small mb-1">Mã tài sản</div>
+                <h5 class="fw-bold text-primary mb-0">@(e?.AssetCode ?? "—")</h5>
+            </div>
+            <div>
+                <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fs-sm fw-medium">
+                    @(e?.EquipmentName)
+                </span>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs nav-tabs-premium mb-4" id="repairHistoryTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="incidents-tab" data-bs-toggle="tab" data-bs-target="#incidents" type="button" role="tab" aria-controls="incidents" aria-selected="true">
+                    <i class='bx bx-error-circle me-1'></i>Báo cáo Sự cố (@(incidents?.Count() ?? 0))
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tickets-tab" data-bs-toggle="tab" data-bs-target="#tickets" type="button" role="tab" aria-controls="tickets" aria-selected="false">
+                    <i class='bx bx-wrench me-1'></i>Phiếu Bảo trì Ngoài (@(tickets?.Count() ?? 0))
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="statuslogs-tab" data-bs-toggle="tab" data-bs-target="#statuslogs" type="button" role="tab" aria-controls="statuslogs" aria-selected="false">
+                    <i class='bx bx-history me-1'></i>Nhật ký Trạng thái (@(statusLogs?.Count() ?? 0))
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Contents -->
+        <div class="tab-content" id="repairHistoryTabContent">
+            
+            <!-- TAB 1: INCIDENTS -->
+            <div class="tab-pane fade show active" id="incidents" role="tabpanel" aria-labelledby="incidents-tab">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3" style="width: 150px;">Ngày báo cáo</th>
+                                <th>Người báo</th>
+                                <th>Phòng học</th>
+                                <th>Mô tả sự cố</th>
+                                <th>Trạng thái</th>
+                                <th class="pe-3">Giải quyết / Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (incidents != null && incidents.Any())
+                            {
+                                foreach (var item in incidents)
+                                {
+                                    <tr>
+                                        <td class="ps-3">@item.ReportedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@item.ReportedByNavigation.FullName</td>
+                                        <td>@item.Room.RoomName</td>
+                                        <td>@item.Description</td>
+                                        <td>
+                                            @if (item.Status == "Pending")
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Chờ xử lý</span>
+                                            }
+                                            else if (item.Status == "InProgress")
+                                            {
+                                                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">Đang xử lý</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Đã khắc phục</span>
+                                            }
+                                        </td>
+                                        <td class="pe-3 text-secondary">
+                                            @if (item.ResolvedAt.HasValue)
+                                            {
+                                                <div class="small">
+                                                    <strong>Xong ngày:</strong> @item.ResolvedAt.Value.ToString("dd/MM/yyyy")<br />
+                                                    <strong>Ghi chú:</strong> @item.ResolutionNote
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span>—</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class='bx bx-info-circle fs-1 mb-2 d-block text-secondary'></i>
+                                        Không có báo cáo sự cố nào được ghi nhận cho thiết bị này.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: MAINTENANCE TICKETS -->
+            <div class="tab-pane fade" id="tickets" role="tabpanel" aria-labelledby="tickets-tab">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Đơn vị sửa chữa</th>
+                                <th>Ngày gửi</th>
+                                <th>Hẹn trả</th>
+                                <th>Chi phí ước tính</th>
+                                <th>Chi phí thực tế</th>
+                                <th>Trạng thái</th>
+                                <th class="pe-3">Ngày nhận lại</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (tickets != null && tickets.Any())
+                            {
+                                foreach (var item in tickets)
+                                {
+                                    <tr>
+                                        <td class="ps-3 fw-semibold">@item.ServiceProvider</td>
+                                        <td>@item.SentDate.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.ExpectedReturnDate.ToString("dd/MM/yyyy")</td>
+                                        <td>@(item.EstimatedCost?.ToString("N0") ?? "—") đ</td>
+                                        <td>@(item.ActualCost?.ToString("N0") ?? "—") đ</td>
+                                        <td>
+                                            @if (item.Status == "Sent")
+                                            {
+                                                <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">Đang gửi sửa</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Đã trả máy</span>
+                                            }
+                                        </td>
+                                        <td class="pe-3 text-secondary">@(item.ActualReturnDate?.ToString("dd/MM/yyyy") ?? "—")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class='bx bx-info-circle fs-1 mb-2 d-block text-secondary'></i>
+                                        Thiết bị chưa từng lập phiếu gửi bảo trì ngoài.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 3: STATUS LOGS -->
+            <div class="tab-pane fade" id="statuslogs" role="tabpanel" aria-labelledby="statuslogs-tab">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3" style="width: 160px;">Thời gian</th>
+                                <th>Nội dung thay đổi</th>
+                                <th>Giá trị cũ</th>
+                                <th>Giá trị mới</th>
+                                <th>Người thực hiện</th>
+                                <th class="pe-3">Lý do</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (statusLogs != null && statusLogs.Any())
+                            {
+                                foreach (var item in statusLogs)
+                                {
+                                    <tr>
+                                        <td class="ps-3 fw-semibold">@item.ChangedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">
+                                                @(item.FieldChanged ?? "Trạng thái")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted text-wrap d-inline-block" style="max-width: 180px;">
+                                                @(item.OldValue ?? item.OldStatus ?? "—")
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <strong class="text-dark text-wrap d-inline-block" style="max-width: 180px;">
+                                                @(item.NewValue ?? item.NewStatus ?? "—")
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <i class='bx bx-user me-1 text-secondary'></i>
+                                            <span>@item.ChangedByNavigation.FullName</span>
+                                        </td>
+                                        <td class="pe-3 text-secondary">@(item.ChangeReason ?? "—")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class='bx bx-info-circle fs-1 mb-2 d-block text-secondary'></i>
+                                        Chưa ghi nhận thay đổi nào trong log hệ thống.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Back Button -->
+        <div class="d-flex justify-content-end pt-3 border-top mt-4">
+            <a asp-action="Index" class="btn btn-outline-secondary px-4 fw-medium">
+                <i class='bx bx-arrow-back me-1'></i> Quay lại Kho thiết bị
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Premium custom styling for navigation tabs */
+    .nav-tabs-premium {
+        border-bottom: 2px solid #f1f3f9;
+    }
+    .nav-tabs-premium .nav-link {
+        border: none;
+        color: #6b7280;
+        font-weight: 500;
+        padding: 0.75rem 1.25rem;
+        transition: all 0.2s ease;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+    }
+    .nav-tabs-premium .nav-link:hover {
+        color: #4F46E5;
+        border-bottom-color: #e2e8f0;
+    }
+    .nav-tabs-premium .nav-link.active {
+        color: #4F46E5;
+        background: none;
+        border-bottom: 2px solid #4F46E5;
+        font-weight: 600;
+    }
+
+    .bg-success-subtle { background-color: #d1e7dd !important; }
+    .text-success { color: #0f5132 !important; }
+    .border-success-subtle { border-color: #a3cfbb !important; }
+    
+    .bg-warning-subtle { background-color: #fff3cd !important; }
+    .text-warning { color: #664d03 !important; }
+    .border-warning-subtle { border-color: #ffe69c !important; }
+    
+    .bg-info-subtle { background-color: #cff4fc !important; }
+    .text-info { color: #055160 !important; }
+    .border-info-subtle { border-color: #9eeaf9 !important; }
+
+    .fs-sm { font-size: 0.8rem; }
+</style>
