@@ -49,6 +49,9 @@ else
                     </a>
                     @if (item.Status != "Disposed" && item.Status != "ProposedDisposal")
                     {
+                        <a asp-action="ProposeDisposal" asp-route-id="@item.EquipmentId" class="btn btn-sm btn-outline-danger me-1" title="Đề xuất thanh lý">
+                            <i class='bx bx-trash'></i>
+                        </a>
                         <a asp-action="Edit" asp-route-id="@item.EquipmentId" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
                             <i class='bx bx-edit-alt'></i>
                         </a>
