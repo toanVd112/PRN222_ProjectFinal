@@ -1,0 +1,128 @@
+@model PRN_Project.Models.EquipmentCreateViewModel
+
+@{
+    ViewData["Title"] = "Thêm thiết bị mới";
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb & Back -->
+    <div class="mb-4">
+        <a asp-action="Index" class="btn btn-link text-decoration-none text-muted p-0 d-inline-flex align-items-center">
+            <i class='bx bx-left-arrow-alt fs-4 me-1'></i> Quay lại danh sách thiết bị
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class='bx bx-plus-circle me-2 align-middle fs-5'></i>Thêm mới Thiết bị vào Kho
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="row g-3">
+                            <!-- Asset Code -->
+                            <div class="col-md-6">
+                                <label asp-for="AssetCode" class="form-label fw-semibold text-dark">Mã tài sản (Asset Code) <span class="text-danger">*</span></label>
+                                <input asp-for="AssetCode" class="form-control" placeholder="Ví dụ: LAP-001, PROJ-002" />
+                                <span asp-validation-for="AssetCode" class="text-danger"></span>
+                                <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Mã tài sản phải là duy nhất. Chỉ gồm chữ cái, số, dấu gạch ngang (-) và gạch dưới (_). Tối đa 50 ký tự.</small>
+                            </div>
+
+                            <!-- Name -->
+                            <div class="col-md-6">
+                                <label asp-for="EquipmentName" class="form-label fw-semibold text-dark">Tên thiết bị <span class="text-danger">*</span></label>
+                                <input asp-for="EquipmentName" class="form-control" placeholder="Tên thiết bị..." />
+                                <span asp-validation-for="EquipmentName" class="text-danger"></span>
+                                <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Nhập tên gọi rõ ràng, cụ thể (ví dụ: Laptop Dell Latitude 5420). Tối đa 150 ký tự.</small>
+                            </div>
+
+                            <!-- Category -->
+                            <div class="col-md-6">
+                                <label asp-for="CategoryId" class="form-label fw-semibold text-dark">Loại thiết bị <span class="text-danger">*</span></label>
+                                <select asp-for="CategoryId" asp-items="Model.Categories" class="form-select">
+                                    <option value="">-- Chọn Loại thiết bị --</option>
+                                </select>
+                                <span asp-validation-for="CategoryId" class="text-danger"></span>
+                                <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Chọn nhóm danh mục tương ứng để phục vụ việc lọc và phân loại.</small>
+                            </div>
+
+                            <!-- Initial Room assignment -->
+                            <div class="col-md-6">
+                                <label asp-for="CurrentRoomId" class="form-label fw-semibold text-dark">Phòng bàn giao ban đầu</label>
+                                <select asp-for="CurrentRoomId" asp-items="Model.Rooms" class="form-select">
+                                    <option value="">-- Lưu kho (Chưa bàn giao phòng) --</option>
+                                </select>
+                                <span asp-validation-for="CurrentRoomId" class="text-danger"></span>
+                                <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Nếu chưa bàn giao phòng học, hãy để trống để thiết bị lưu kho.</small>
+                            </div>
+
+                            <!-- Serial Number -->
+                            <div class="col-md-6">
+                                <label asp-for="SerialNumber" class="form-label fw-semibold text-dark">Số Serial (S/N)</label>
+                                <input asp-for="SerialNumber" class="form-control" placeholder="Số Serial/Số máy..." />
+                                <span asp-validation-for="SerialNumber" class="text-danger"></span>
+                                <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Mã định danh phần cứng do nhà sản xuất cung cấp (nếu có). Tối đa 100 ký tự.</small>
+                            </div>
+
+                            <!-- Manufacturer -->
+                            <div class="col-md-6">
+                                <label asp-for="Manufacturer" class="form-label fw-semibold text-dark">Hãng sản xuất</label>
+                                <input asp-for="Manufacturer" class="form-control" placeholder="Dell, HP, Sony, v.v..." />
+                                <span asp-validation-for="Manufacturer" class="text-danger"></span>
+                                <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Tên thương hiệu sản xuất thiết bị. Tối đa 150 ký tự.</small>
+                            </div>
+
+                            <!-- Supplier -->
+                            <div class="col-md-6">
+                                <label asp-for="Supplier" class="form-label fw-semibold text-dark">Nhà cung cấp</label>
+                                <input asp-for="Supplier" class="form-control" placeholder="Đơn vị cung cấp..." />
+                                <span asp-validation-for="Supplier" class="text-danger"></span>
+                                <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Đơn vị/Cửa hàng cung ứng thiết bị. Tối đa 150 ký tự.</small>
+                            </div>
+
+                            <!-- Purchase Date -->
+                            <div class="col-md-6">
+                                <label asp-for="PurchaseDate" class="form-label fw-semibold text-dark">Ngày mua</label>
+                                <input asp-for="PurchaseDate" type="date" class="form-control" />
+                                <span asp-validation-for="PurchaseDate" class="text-danger"></span>
+                                <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Ngày hóa đơn hoặc ngày nhập kho thiết bị.</small>
+                            </div>
+
+                            <!-- Warranty Expiry -->
+                            <div class="col-md-6">
+                                <label asp-for="WarrantyExpiry" class="form-label fw-semibold text-dark">Hạn bảo hành</label>
+                                <input asp-for="WarrantyExpiry" type="date" class="form-control" />
+                                <span asp-validation-for="WarrantyExpiry" class="text-danger"></span>
+                                <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Ngày hết hạn bảo hành của thiết bị (thường sau ngày mua).</small>
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="col-12">
+                                <label asp-for="Notes" class="form-label fw-semibold text-dark">Ghi chú thêm</label>
+                                <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Mô tả cấu hình, tình trạng ngoại quan hoặc thông tin bổ sung..."></textarea>
+                                <span asp-validation-for="Notes" class="text-danger"></span>
+                                <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Các thông tin lưu ý đặc biệt đối với thiết bị này.</small>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-light border">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-primary px-4 shadow-sm">Lưu thiết bị</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
