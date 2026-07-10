@@ -54,12 +54,12 @@
                 {
                     <li class="menu-header">Kỹ thuật (Technician)</li>
                     <li>
-                        <a href="#">
+                        <a asp-controller="Equipments" asp-action="Index" class="@(currentController == "Equipments" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
                             <i class='bx bx-laptop'></i> Kho Thiết bị
                         </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a asp-controller="Equipments" asp-action="Transfers" class="@(currentController == "Equipments" && ViewContext.RouteData.Values["action"]?.ToString() == "Transfers" ? "active" : "")">
                             <i class='bx bx-transfer'></i> Luân chuyển
                         </a>
                     </li>
@@ -69,7 +69,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a asp-controller="Equipments" asp-action="Disposals" class="@(currentController == "Equipments" && ViewContext.RouteData.Values["action"]?.ToString() == "Disposals" ? "active" : "")">
                             <i class='bx bx-trash-alt'></i> Thanh lý
                         </a>
                     </li>
