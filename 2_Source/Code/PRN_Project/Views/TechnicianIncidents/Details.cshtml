@@ -161,110 +161,28 @@
             }
             else if (Model.Status == "InProgress")
             {
-                @if (Model.MaintenanceTicket == null)
-                {
-                    <!-- No ticket: choice between resolving on-site or sending out to maintenance -->
-                    <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
-                        <div class="card-header bg-success text-white py-3">
-                            <h5 class="card-title mb-0 fw-bold"><i class='bx bx-badge-check me-2 align-middle fs-5'></i>Hoàn thành sửa chữa tại chỗ</h5>
-                        </div>
-                        <div class="card-body p-4">
-                            <p class="text-muted fs-7">Sử dụng biểu mẫu này nếu thiết bị đã được kỹ thuật viên sửa chữa thành công tại chỗ. Trạng thái thiết bị sẽ tự động phục hồi về **Đang sử dụng (InUse)**.</p>
-                            
-                            <form asp-action="Resolve" asp-route-id="@Model.IncidentId" method="post">
-                                @Html.AntiForgeryToken()
-                                <div class="mb-3">
-                                    <label for="ResolutionNote" class="form-label fw-semibold text-dark">Mô tả chi tiết kết quả xử lý <span class="text-danger">*</span></label>
-                                    <textarea id="ResolutionNote" name="resolutionNote" class="form-control" rows="4" placeholder="Nhập những nội dung đã sửa đổi, ví dụ: Cài đặt lại driver card màn hình, đấu nối lại đầu cắm cáp HDMI, thay thế pin micro mới..." required></textarea>
-                                    <small class="text-muted d-block mt-1">Nội dung này sẽ được gửi tới giảng viên báo lỗi và lưu vào lịch sử.</small>
-                                </div>
-
-                                <button type="submit" class="btn btn-success px-4 shadow-sm">
-                                    <i class='bx bx-check me-1 align-middle fs-5'></i> Hoàn thành sửa chữa
-                                </button>
-                            </form>
-                        </div>
+                <!-- Hoàn thành sửa chữa tại chỗ -->
+                <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="card-title mb-0 fw-bold"><i class='bx bx-badge-check me-2 align-middle fs-5'></i>Hoàn thành sửa chữa tại chỗ</h5>
                     </div>
-
-                    <div class="card border-0 shadow-sm rounded-3 bg-white">
-                        <div class="card-header bg-info text-white py-3">
-                            <h5 class="card-title mb-0 fw-bold"><i class='bx bx-paper-plane me-2 align-middle fs-5'></i>Phương án Bảo trì ngoài (Sửa ngoài)</h5>
-                        </div>
-                        <div class="card-body p-4 text-center">
-                            <p class="text-muted fs-7 text-start mb-3">Nếu sự cố liên quan đến hỏng hóc phần cứng phức tạp và không thể tự khắc phục tại chỗ, kỹ thuật viên cần lập phiếu xuất thiết bị cho đơn vị sửa chữa chuyên nghiệp bên ngoài. Thiết bị sẽ đổi sang trạng thái **Đang bảo trì ngoài (UnderMaintenance)**.</p>
-                            
-                            <a asp-action="CreateTicket" asp-route-id="@Model.IncidentId" class="btn btn-outline-info px-4">
-                                <i class='bx bx-file me-1 align-middle fs-5'></i> Lập phiếu bảo trì ngoài
-                            </a>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <!-- Equipment is currently out for maintenance. Show option to receive it back -->
-                    <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
-                        <div class="card-header bg-info text-white py-3">
-                            <h5 class="card-title mb-0 fw-bold"><i class='bx bx-calendar-check me-2 align-middle fs-5'></i>Thông tin Bảo trì ngoại</h5>
-                        </div>
-                        <div class="card-body p-4 fs-7">
-                            <div class="row g-3 mb-3">
-                                <div class="col-6">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Đơn vị nhận sửa</span>
-                                    <span class="text-dark fw-bold">@Model.MaintenanceTicket.ServiceProvider</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Chi phí ước tính</span>
-                                    <span class="text-dark">@(Model.MaintenanceTicket.EstimatedCost?.ToString("N0") ?? "0") VNĐ</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Ngày gửi đi</span>
-                                    <span class="text-dark">@Model.MaintenanceTicket.SentDate.ToString("dd/MM/yyyy")</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Ngày hẹn trả dự kiến</span>
-                                    <span class="text-danger fw-bold">@Model.MaintenanceTicket.ExpectedReturnDate.ToString("dd/MM/yyyy")</span>
-                                </div>
-                                <div class="col-12">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Người lập phiếu</span>
-                                    <span class="text-dark">@Model.MaintenanceTicket.CreatedByNavigation.FullName</span>
-                                </div>
+                    <div class="card-body p-4">
+                        <p class="text-muted fs-7">Sử dụng biểu mẫu này nếu thiết bị đã được kỹ thuật viên sửa chữa thành công tại chỗ. Trạng thái thiết bị sẽ tự động phục hồi về **Đang sử dụng (InUse)**.</p>
+                        
+                        <form asp-action="Resolve" asp-route-id="@Model.IncidentId" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label for="ResolutionNote" class="form-label fw-semibold text-dark">Mô tả chi tiết kết quả xử lý <span class="text-danger">*</span></label>
+                                <textarea id="ResolutionNote" name="resolutionNote" class="form-control" rows="4" placeholder="Nhập những nội dung đã sửa đổi, ví dụ: Cài đặt lại driver card màn hình, đấu nối lại đầu cắm cáp HDMI, thay thế pin micro mới..." required></textarea>
+                                <small class="text-muted d-block mt-1">Nội dung này sẽ được gửi tới giảng viên báo lỗi và lưu vào lịch sử.</small>
                             </div>
-                        </div>
+
+                            <button type="submit" class="btn btn-success px-4 shadow-sm">
+                                <i class='bx bx-check me-1 align-middle fs-5'></i> Hoàn thành sửa chữa
+                            </button>
+                        </form>
                     </div>
-
-                    <div class="card border-0 shadow-sm rounded-3 bg-white">
-                        <div class="card-header bg-success text-white py-3">
-                            <h5 class="card-title mb-0 fw-bold"><i class='bx bx-down-arrow-circle me-2 align-middle fs-5'></i>Nhận lại máy & Hoàn thành sự cố</h5>
-                        </div>
-                        <div class="card-body p-4">
-                            <p class="text-muted fs-7">Xác nhận thiết bị đã được đơn vị bảo trì sửa xong và bàn giao trở lại phòng học. Trạng thái thiết bị sẽ phục hồi về **Đang sử dụng (InUse)** và đóng sự cố.</p>
-                            
-                            <form asp-action="CompleteTicket" asp-route-incidentId="@Model.IncidentId" method="post" class="row g-3">
-                                @Html.AntiForgeryToken()
-                                <div class="col-md-6">
-                                    <label for="ActualReturnDate" class="form-label fw-semibold text-dark">Ngày nhận lại máy <span class="text-danger">*</span></label>
-                                    <input type="date" id="ActualReturnDate" name="actualReturnDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" required />
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label for="ActualCost" class="form-label fw-semibold text-dark">Chi phí thực tế (VNĐ) <span class="text-danger">*</span></label>
-                                    <input type="number" id="ActualCost" name="actualCost" value="@(Model.MaintenanceTicket.EstimatedCost ?? 0)" min="0" step="1000" class="form-control" required />
-                                </div>
-
-                                <div class="col-12">
-                                    <label for="Notes" class="form-label fw-semibold text-dark">Ghi chú bàn giao nhận lại</label>
-                                    <textarea id="Notes" name="notes" class="form-control" rows="3" placeholder="Ghi nhận linh kiện thay thế, hóa đơn, hoặc tình trạng thiết bị sau khi nhận về..."></textarea>
-                                </div>
-
-                                <div class="col-12 pt-2">
-                                    <button type="submit" class="btn btn-success px-4 shadow-sm">
-                                        <i class='bx bx-check me-1 align-middle fs-5'></i> Xác nhận hoàn thành bảo trì
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                }
+                </div>
             }
             else if (Model.Status == "Resolved")
             {
@@ -283,46 +201,7 @@
                         </div>
                     </div>
                 </div>
-
-                @if (Model.MaintenanceTicket != null)
-                {
-                    <!-- Display completed maintenance ticket details -->
-                    <div class="card border-0 shadow-sm rounded-3 bg-white">
-                        <div class="card-header bg-light border-0 py-3">
-                            <h5 class="card-title mb-0 fw-bold text-dark"><i class='bx bx-file-blank me-2 align-middle text-primary'></i>Phiếu bảo trì ngoài đã hoàn tất</h5>
-                        </div>
-                        <div class="card-body p-4 fs-7">
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Đơn vị sửa chữa</span>
-                                    <span class="text-dark fw-medium">@Model.MaintenanceTicket.ServiceProvider</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Chi phí ước tính</span>
-                                    <span class="text-dark">@(Model.MaintenanceTicket.EstimatedCost?.ToString("N0") ?? "0") VNĐ</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Ngày gửi đi</span>
-                                    <span class="text-dark">@Model.MaintenanceTicket.SentDate.ToString("dd/MM/yyyy")</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Ngày nhận lại thực tế</span>
-                                    <span class="text-dark fw-bold">@Model.MaintenanceTicket.ActualReturnDate?.ToString("dd/MM/yyyy")</span>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Chi phí thực tế thanh toán</span>
-                                    <span class="text-success fw-bold">@Model.MaintenanceTicket.ActualCost?.ToString("N0") VNĐ</span>
-                                </div>
-                                <div class="col-12 border-top pt-2">
-                                    <span class="text-muted d-block fs-8 fw-semibold">Ghi chú phiếu bảo trì</span>
-                                    <p class="text-muted mb-0 italic">@(string.IsNullOrEmpty(Model.MaintenanceTicket.Notes) ? "Không có ghi chú" : Model.MaintenanceTicket.Notes)</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
             }
-
         </div>
     </div>
 </div>
