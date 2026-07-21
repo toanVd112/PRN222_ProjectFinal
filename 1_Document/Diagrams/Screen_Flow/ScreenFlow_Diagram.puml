@@ -1,0 +1,116 @@
+@startuml CEMS_ScreenFlow
+
+skinparam nodesep 20
+skinparam ranksep 30
+skinparam padding 2
+
+skinparam state {
+    BackgroundColor White
+    BorderColor #2c3e50
+    ArrowColor #2980b9
+    FontName Arial
+    FontSize 12
+}
+
+title CEMS (Classroom Equipment Management System) - Screen Flow
+
+' === SCREEN DEFINITIONS ===
+state "Login Screen" as Login
+state "Forgot Password Screen" as ForgotPassword
+
+state "Admin Zone" as AdminZone {
+    state "Admin Dashboard" as AdminDash
+    state "Manage Users" as ManageUsers
+    state "Create/Edit User Form" as EditUser
+    state "Manage Rooms" as ManageRooms
+    state "Manage Categories" as ManageCats
+    state "Equipment Disposals" as Disposals
+    
+    ' Force vertical stacking inside Admin Zone
+    ManageUsers -[hidden]-> ManageRooms
+    ManageRooms -[hidden]-> ManageCats
+    ManageCats -[hidden]-> Disposals
+    ManageUsers -[hidden]-> EditUser
+}
+
+state "Technician Zone" as TechZone {
+    state "Equipment List" as TechEquipList
+    state "Add Equipment Form" as AddEquip
+    state "Edit Equipment Form" as EditEquip
+    state "Transfer Room Screen" as TransferRoom
+    state "Process Incident Screen" as ProcessIncident
+    state "Create Maintenance Ticket" as CreateTicket
+    
+    ' Force vertical stacking inside Technician Zone
+    AddEquip -[hidden]-> EditEquip
+    EditEquip -[hidden]-> TransferRoom
+    TransferRoom -[hidden]-> ProcessIncident
+    ProcessIncident -[hidden]-> CreateTicket
+}
+
+state "Lecturer Zone" as LectZone {
+    state "Room Equipment View" as LectRoomEquip
+    state "Report Incident Form" as ReportIncident
+    state "Track Incidents List" as TrackIncidents
+    
+    ' Force vertical stacking inside Lecturer Zone
+    ReportIncident -[hidden]-> TrackIncidents
+}
+
+state "Common Zone" as CommonZone {
+    state "My Profile Screen" as MyProfile
+    state "Change Password Screen" as ChangePassword
+}
+
+' === NAVIGATION FLOW ===
+
+[*] --> Login : Access System
+Login --> ForgotPassword : Click "Forgot Password"
+ForgotPassword --> Login : Click "Back"
+
+' Authentication & Role-based Routing
+Login --> AdminDash : [Role = Admin]
+Login --> TechEquipList : [Role = Technician]
+Login --> LectRoomEquip : [Role = Lecturer]
+
+' Admin Flow
+AdminDash --> ManageUsers : Click "Manage Users"
+AdminDash --> ManageRooms : Click "Manage Rooms"
+AdminDash --> ManageCats : Click "Manage Categories"
+AdminDash --> Disposals : Click "Approve Disposals"
+
+ManageUsers --> EditUser : Click "Create/Edit"
+EditUser --> ManageUsers : Click "Save/Cancel"
+
+' Technician Flow
+TechEquipList --> AddEquip : Click "Add"
+AddEquip --> TechEquipList : Submit Form
+TechEquipList --> EditEquip : Click "Edit"
+EditEquip --> TechEquipList : Submit Form
+TechEquipList --> TransferRoom : Click "Transfer"
+TransferRoom --> TechEquipList : Submit Request
+TechEquipList --> ProcessIncident : Click incident
+ProcessIncident --> CreateTicket : Click "Create Ticket"
+CreateTicket --> ProcessIncident : Ticket created
+
+' Lecturer Flow
+LectRoomEquip --> ReportIncident : Click "Report"
+ReportIncident --> TrackIncidents : Submit ok
+TrackIncidents --> LectRoomEquip : Click "Back"
+
+' Common Flow (Menu Navbar)
+AdminDash --> MyProfile : Menu "My Profile"
+TechEquipList --> MyProfile : Menu "My Profile"
+LectRoomEquip --> MyProfile : Menu "My Profile"
+
+MyProfile --> ChangePassword : Click "Change Password"
+ChangePassword --> MyProfile : Click "Cancel"
+ChangePassword --> Login : Password changed
+MyProfile --> Login : Click "Logout"
+
+' Layout constraints between zones
+AdminZone -[hidden]-> TechZone
+TechZone -[hidden]-> LectZone
+LectZone -[hidden]-> CommonZone
+
+@enduml
