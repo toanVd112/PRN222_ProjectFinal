@@ -1,0 +1,59 @@
+@model List<PRN_Project.Models.IncidentReport>
+
+@if (!Model.Any())
+{
+    <tr>
+        <td colspan="6" class="text-center text-muted py-4">
+            <i class='bx bx-search-alt-2 fs-2 d-block mb-2'></i>
+            Không tìm thấy báo cáo sự cố nào.
+        </td>
+    </tr>
+}
+else
+{
+    foreach (var item in Model)
+    {
+        <tr>
+            <td class="fw-bold">INC-#@item.IncidentId</td>
+            <td>
+                <span class="text-dark fw-bold"><i class='bx bx-door-open me-1 text-primary'></i>@item.Room.RoomCode</span>
+                <small class="text-muted d-block">@item.Room.RoomName</small>
+            </td>
+            <td>
+                <span class="fw-medium text-dark">@item.Equipment.AssetCode</span>
+                <small class="text-muted d-block">@item.Equipment.EquipmentName</small>
+            </td>
+            <td>
+                <div class="text-truncate" style="max-width: 250px;" title="@item.Description">
+                    @item.Description
+                </div>
+            </td>
+            <td>
+                @switch (item.Status)
+                {
+                    case "Pending":
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1.5"><i class='bx bx-time-five me-1'></i>Chờ tiếp nhận</span>
+                        break;
+                    case "InProgress":
+                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2.5 py-1.5"><i class='bx bx-play-circle me-1'></i>Đang sửa chữa</span>
+                        break;
+                    case "Resolved":
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5"><i class='bx bx-check-circle me-1'></i>Đã giải quyết</span>
+                        break;
+                    default:
+                        <span class="badge bg-light text-dark border px-2.5 py-1.5">@item.Status</span>
+                        break;
+                }
+            </td>
+            <td>
+                <span class="fs-7 text-dark">@item.ReportedByNavigation.FullName</span>
+                <small class="text-muted d-block">@item.ReportedAt.ToString("dd/MM/yyyy HH:mm")</small>
+            </td>
+            <td class="text-end">
+                <a asp-action="Details" asp-route-id="@item.IncidentId" class="btn btn-sm btn-outline-primary px-3">
+                    <i class='bx bx-wrench me-1 align-middle'></i> Xử lý
+                </a>
+            </td>
+        </tr>
+    }
+}
