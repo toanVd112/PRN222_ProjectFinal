@@ -1,0 +1,164 @@
+@model PRN_Project.Models.UserListViewModel
+
+@{
+    ViewData["Title"] = "Quản lý tài khoản";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800"><i class='bx bx-user-circle'></i> Quản lý tài khoản</h2>
+        <a asp-action="Create" class="btn btn-primary shadow-sm">
+            <i class='bx bx-plus'></i> Thêm tài khoản
+        </a>
+    </div>
+
+    <!-- Filter & Search -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row g-3" id="filterForm">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class='bx bx-search'></i></span>
+                        <input type="text" asp-for="SearchTerm" id="searchInput" class="form-control" placeholder="Tìm theo mã, tên, email...">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select asp-for="RoleFilter" class="form-select" onchange="document.getElementById('filterForm').submit();">
+                        <option value="">-- Tất cả vai trò --</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Technician">Nhân viên (Technician)</option>
+                        <option value="Lecturer">Giảng viên (Lecturer)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select asp-for="StatusFilter" class="form-select" onchange="document.getElementById('filterForm').submit();">
+                        <option value="">-- Tất cả trạng thái --</option>
+                        <option value="Active">Đang hoạt động</option>
+                        <option value="Inactive">Đã khóa</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã NV/GV</th>
+                            <th>Họ và Tên</th>
+                            <th>Email</th>
+                            <th>Vai trò</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Users.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy tài khoản nào.</td>
+                            </tr>
+                        }
+                        @foreach (var item in Model.Users)
+                        {
+                            <tr>
+                                <td class="fw-medium text-primary">@item.UserCode</td>
+                                <td>@item.FullName</td>
+                                <td>@item.Email</td>
+                                <td>
+                                    @if (item.Role == "Admin")
+                                    {
+                                        <span class="badge bg-danger">Admin</span>
+                                    }
+                                    else if (item.Role == "Technician")
+                                    {
+                                        <span class="badge bg-info text-dark">Technician</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Lecturer</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success">Đang hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Đã khóa</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Edit" asp-route-id="@item.UserId" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+                                            <i class='bx bx-edit-alt'></i>
+                                        </a>
+                                        @if (item.Role != "Admin")
+                                        {
+                                            <form asp-action="ToggleStatus" asp-route-id="@item.UserId" method="post" style="display:inline;">
+                                                <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-outline-danger" : "btn-outline-success")" 
+                                                        title="@(item.IsActive ? "Khóa tài khoản" : "Mở khóa")"
+                                                        onclick="return confirm('Bạn có chắc chắn muốn @(item.IsActive ? "KHÓA" : "MỞ KHÓA") tài khoản này?');">
+                                                    <i class='bx @(item.IsActive ? "bx-lock-alt" : "bx-lock-open-alt")'></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <!-- Chặn tự khóa bản thân hoặc khóa Admin khác theo rule cơ bản -->
+                                            <button type="button" class="btn btn-sm btn-outline-secondary disabled" title="Không thể khóa Admin">
+                                                <i class='bx bx-shield-x'></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="card-footer bg-white border-top-0 pt-3">
+                <nav>
+                    <ul class="pagination justify-content-end mb-0">
+                        <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@(Model.CurrentPage - 1)" asp-route-searchTerm="@Model.SearchTerm" asp-route-roleFilter="@Model.RoleFilter" asp-route-statusFilter="@Model.StatusFilter">Trang trước</a>
+                        </li>
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(Model.CurrentPage == i ? "active" : "")">
+                                <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-searchTerm="@Model.SearchTerm" asp-route-roleFilter="@Model.RoleFilter" asp-route-statusFilter="@Model.StatusFilter">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@(Model.CurrentPage + 1)" asp-route-searchTerm="@Model.SearchTerm" asp-route-roleFilter="@Model.RoleFilter" asp-route-statusFilter="@Model.StatusFilter">Trang sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var searchTimer;
+            $('#searchInput').on('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    $('#filterForm').submit();
+                }, 500); // Đợi 500ms
+            });
+        });
+    </script>
+}
