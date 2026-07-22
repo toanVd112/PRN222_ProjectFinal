@@ -22,6 +22,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
     });
 
+// Cấu hình dịch vụ Email
+builder.Services.AddScoped<PRN_Project.Services.IEmailService, PRN_Project.Services.SmtpEmailService>();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -29,6 +32,29 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<AppDbContext>();
     DbSeeder.Seed(context);
+
+    // Tự động khôi phục lại Email nội bộ
+    var adminUser = context.Users.FirstOrDefault(u => u.UserCode == "ADMIN001");
+    if (adminUser != null && adminUser.Email != "admin@cems.com")
+    {
+        adminUser.Email = "admin@cems.com";
+    }
+
+    // Cập nhật cho Technician
+    var techUser = context.Users.FirstOrDefault(u => u.UserCode == "TECH001");
+    if (techUser != null && techUser.Email != "tech@cems.com")
+    {
+        techUser.Email = "tech@cems.com";
+    }
+
+    // Cập nhật cho Lecturer
+    var lecUser = context.Users.FirstOrDefault(u => u.UserCode == "LEC001");
+    if (lecUser != null && lecUser.Email != "lecturer@cems.com")
+    {
+        lecUser.Email = "lecturer@cems.com";
+    }
+
+    context.SaveChanges();
 }
 
 // Configure the HTTP request pipeline.
