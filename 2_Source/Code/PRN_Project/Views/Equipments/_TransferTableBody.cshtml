@@ -1,0 +1,50 @@
+@model List<PRN_Project.Models.EquipmentListItemViewModel>
+
+@if (!Model.Any())
+{
+    <tr>
+        <td colspan="6" class="text-center text-muted py-4">
+            <i class='bx bx-search-alt-2 fs-2 d-block mb-2'></i>
+            Không tìm thấy thiết bị nào cần điều chuyển.
+        </td>
+    </tr>
+}
+else
+{
+    foreach (var item in Model)
+    {
+        <tr>
+            <td class="fw-bold">@item.AssetCode</td>
+            <td>@item.EquipmentName</td>
+            <td><span class="badge bg-light text-dark border">@item.CategoryName</span></td>
+            <td><span class="fw-medium text-dark"><i class='bx bx-door-open text-primary me-1'></i>@item.RoomDisplayName</span></td>
+            <td>
+                @switch (item.Status)
+                {
+                    case "InUse":
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5"><i class='bx bx-check-circle me-1'></i>Đang sử dụng</span>
+                        break;
+                    case "PendingRepair":
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1.5"><i class='bx bx-error-circle me-1'></i>Chờ sửa chữa</span>
+                        break;
+                    case "UnderMaintenance":
+                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2.5 py-1.5"><i class='bx bx-wrench me-1'></i>Đang bảo trì</span>
+                        break;
+                    default:
+                        <span class="badge bg-light text-dark border px-2.5 py-1.5">@item.Status</span>
+                        break;
+                }
+            </td>
+            <td class="text-end">
+                <div class="btn-group">
+                    <a asp-action="Transfer" asp-route-id="@item.EquipmentId" class="btn btn-sm btn-primary me-1" title="Thực hiện điều chuyển">
+                        <i class='bx bx-transfer me-1 align-middle'></i> Luân chuyển
+                    </a>
+                    <a asp-action="Details" asp-route-id="@item.EquipmentId" class="btn btn-sm btn-outline-info" title="Xem lịch sử điều chuyển">
+                        <i class='bx bx-history'></i> Lịch sử
+                    </a>
+                </div>
+            </td>
+        </tr>
+    }
+}

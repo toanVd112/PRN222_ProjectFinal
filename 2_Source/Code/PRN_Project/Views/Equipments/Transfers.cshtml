@@ -1,0 +1,153 @@
+@model PRN_Project.Models.EquipmentListViewModel
+
+@{
+    ViewData["Title"] = "Điều chuyển thiết bị";
+}
+
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h2 class="mb-1 text-primary fw-bold">Điều chuyển thiết bị phòng học</h2>
+            <p class="text-muted mb-0">Quản lý và thực hiện luân chuyển thiết bị giữa các phòng học trong cơ sở.</p>
+        </div>
+    </div>
+
+    <!-- Feedback messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 border-start border-success border-4" role="alert">
+            <i class='bx bx-check-circle me-2 fs-5 align-middle text-success'></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 border-start border-danger border-4" role="alert">
+            <i class='bx bx-error-circle me-2 fs-5 align-middle text-danger'></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Glassmorphic Filter Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3">
+        <div class="card-body p-4">
+            <form id="filterForm" method="get" class="row g-3">
+                <!-- Auto-Search Input -->
+                <div class="col-md-5">
+                    <label for="SearchInput" class="form-label fw-semibold text-muted">Tìm kiếm thiết bị</label>
+                    <div class="input-group input-group-merge">
+                        <span class="input-group-text bg-light border-end-0"><i class='bx bx-search text-muted'></i></span>
+                        <input type="text" id="SearchInput" name="search" value="@Model.Search" class="form-control bg-light border-start-0" placeholder="Nhập tên, mã tài sản hoặc số serial..." autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- Category Filter -->
+                <div class="col-md-35 col-md-3">
+                    <label for="CategorySelect" class="form-label fw-semibold text-muted">Loại thiết bị</label>
+                    <select id="CategorySelect" name="categoryId" class="form-select bg-light">
+                        <option value="">-- Tất cả loại --</option>
+                        @foreach (var cat in Model.Categories)
+                        {
+                            <option value="@cat.Value" selected="@(Model.CategoryId?.ToString() == cat.Value ? "selected" : null)">@cat.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Room Filter -->
+                <div class="col-md-4">
+                    <label for="RoomSelect" class="form-label fw-semibold text-muted">Phòng học hiện tại</label>
+                    <select id="RoomSelect" name="roomId" class="form-select bg-light">
+                        <option value="">-- Tất cả phòng --</option>
+                        @foreach (var room in Model.Rooms)
+                        {
+                            <option value="@room.Value" selected="@(Model.RoomId?.ToString() == room.Value ? "selected" : null)">@room.Text</option>
+                        }
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card border-0 shadow-sm bg-white rounded-3 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted uppercase fs-7">
+                    <tr>
+                        <th style="width: 15%">Mã tài sản</th>
+                        <th style="width: 25%">Tên thiết bị</th>
+                        <th style="width: 15%">Loại</th>
+                        <th style="width: 20%">Vị trí hiện tại</th>
+                        <th style="width: 15%">Trạng thái</th>
+                        <th style="width: 10%" class="text-end">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="transferTableBody">
+                    <partial name="_TransferTableBody" model="Model.Equipments" />
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const $searchInput = $('#SearchInput');
+            const $categorySelect = $('#CategorySelect');
+            const $roomSelect = $('#RoomSelect');
+            const $tableBody = $('#transferTableBody');
+            
+            let debounceTimer;
+
+            // Trigger search with delay
+            function triggerSearch() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(performAjaxSearch, 300);
+            }
+
+            // Perform AJAX search
+            function performAjaxSearch() {
+                const searchVal = $searchInput.val();
+                const categoryVal = $categorySelect.val();
+                const roomVal = $roomSelect.val();
+
+                // Build query params
+                const params = new URLSearchParams();
+                if (searchVal) params.append('search', searchVal);
+                if (categoryVal) params.append('categoryId', categoryVal);
+                if (roomVal) params.append('roomId', roomVal);
+
+                // Add visual loading state
+                $tableBody.css('opacity', '0.5');
+
+                fetch(`@Url.Action("Transfers", "Equipments")?${params.toString()}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Search failed');
+                    return response.text();
+                })
+                .then(html => {
+                    $tableBody.html(html);
+                    // Reset visual loading state
+                    $tableBody.css('opacity', '1');
+                })
+                .catch(error => {
+                    console.error('Error during transfers search:', error);
+                    $tableBody.css('opacity', '1');
+                });
+            }
+
+            // Bind events for live updating
+            $searchInput.on('input', triggerSearch);
+            $categorySelect.on('change', performAjaxSearch);
+            $roomSelect.on('change', performAjaxSearch);
+        });
+    </script>
+}

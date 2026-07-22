@@ -1,0 +1,110 @@
+@model List<PRN_Project.Models.DisposalRequest>
+
+@{
+    ViewData["Title"] = "Danh sách Đề xuất Thanh lý";
+    var selectedStatus = ViewData["SelectedStatus"] as string;
+}
+
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h2 class="mb-1 text-primary fw-bold">Yêu cầu & Đề xuất Thanh lý</h2>
+            <p class="text-muted mb-0">Danh sách theo dõi các đề xuất thanh lý tài sản phòng học.</p>
+        </div>
+    </div>
+
+    <!-- Status Tabs/Filter Buttons -->
+    <div class="d-flex gap-2 mb-4">
+        <a asp-action="Disposals" asp-route-status="" class="btn btn-sm @(string.IsNullOrEmpty(selectedStatus) ? "btn-primary" : "btn-light border") px-3">Tất cả</a>
+        <a asp-action="Disposals" asp-route-status="Pending" class="btn btn-sm @(selectedStatus == "Pending" ? "btn-warning text-white" : "btn-light border") px-3">Chờ duyệt (Pending)</a>
+        <a asp-action="Disposals" asp-route-status="Approved" class="btn btn-sm @(selectedStatus == "Approved" ? "btn-success" : "btn-light border") px-3">Đã duyệt (Approved)</a>
+        <a asp-action="Disposals" asp-route-status="Rejected" class="btn btn-sm @(selectedStatus == "Rejected" ? "btn-danger" : "btn-light border") px-3">Đã từ chối (Rejected)</a>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card border-0 shadow-sm bg-white rounded-3 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted uppercase fs-7">
+                    <tr>
+                        <th style="width: 15%">Thiết bị</th>
+                        <th style="width: 15%">Người đề xuất</th>
+                        <th style="width: 15%">Thời gian</th>
+                        <th style="width: 25%">Lý do đề xuất</th>
+                        <th style="width: 10%">Trạng thái</th>
+                        <th style="width: 20%">Ban quản lý quyết định</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <i class='bx bx-archive-out fs-1 mb-2 d-block'></i>
+                                Không có yêu cầu thanh lý nào.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.EquipmentId" class="fw-bold text-decoration-none">
+                                        @item.Equipment.AssetCode
+                                    </a>
+                                    <small class="text-muted d-block text-truncate" style="max-width: 180px;" title="@item.Equipment.EquipmentName">@item.Equipment.EquipmentName</small>
+                                </td>
+                                <td>
+                                    <span class="fw-medium">@item.ProposedByNavigation.FullName</span>
+                                </td>
+                                <td class="fs-7 text-muted">
+                                    @item.ProposedAt.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td class="fs-7 text-muted" title="@item.Reason">
+                                    <div class="text-truncate" style="max-width: 250px;">@item.Reason</div>
+                                </td>
+                                <td>
+                                    @switch (item.Status)
+                                    {
+                                        case "Pending":
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1.5"><i class='bx bx-time-five me-1'></i>Chờ duyệt</span>
+                                            break;
+                                        case "Approved":
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5"><i class='bx bx-check-circle me-1'></i>Đã duyệt</span>
+                                            break;
+                                        case "Rejected":
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5"><i class='bx bx-x-circle me-1'></i>Đã từ chối</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-light text-dark border px-2.5 py-1.5">@item.Status</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.Status != "Pending")
+                                    {
+                                        <div class="fs-7">
+                                            <span class="fw-medium text-dark">Quyết định bởi: @(item.ApprovedByNavigation?.FullName ?? "Admin")</span>
+                                            <small class="text-muted d-block mt-0.5">Ngày: @item.DecidedAt?.ToString("dd/MM/yyyy")</small>
+                                            @if (!string.IsNullOrEmpty(item.AdminNote))
+                                            {
+                                                <small class="text-danger d-block mt-1 italic" title="@item.AdminNote">Ghi chú: @item.AdminNote</small>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fs-7 italic">Chưa phản hồi</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
