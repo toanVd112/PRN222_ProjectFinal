@@ -130,7 +130,6 @@ namespace PRN_Project.Controllers
 
             return View(equipment);
         }
-
         // GET: Equipments/Create
         [HttpGet]
         public async Task<IActionResult> Create()
@@ -667,6 +666,7 @@ namespace PRN_Project.Controllers
         {
             var equipment = await _context.Equipments
                 .Include(e => e.CurrentRoom)
+
                 .FirstOrDefaultAsync(e => e.EquipmentId == id && e.IsActive);
 
             if (equipment == null)
