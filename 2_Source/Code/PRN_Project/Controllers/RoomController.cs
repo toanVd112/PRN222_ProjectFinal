@@ -212,5 +212,30 @@ namespace PRN_Project.Controllers
             };
             return roomCode.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
         }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Equipments(int id)
+        {
+            var room = await _context.Rooms.FindAsync(id);
+            if (room == null)
+            {
+                return NotFound();
+            }
+
+            var equipments = await _context.Equipments
+                .Include(e => e.Category)
+                .Where(e => e.CurrentRoomId == id)
+                .OrderBy(e => e.Category.CategoryName)
+                .ThenBy(e => e.EquipmentName)
+                .ToListAsync();
+
+            var model = new RoomEquipmentsViewModel
+            {
+                Room = room,
+                Equipments = equipments
+            };
+
+            return View(model);
+        }
     }
 }

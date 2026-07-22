@@ -106,6 +106,9 @@
                                     {
                                         <td class="text-center">
                                             <div class="btn-group" role="group">
+                                                <a asp-action="Equipments" asp-route-id="@item.RoomId" class="btn btn-sm btn-outline-info" title="Xem thiết bị">
+                                                    <i class='bx bx-devices'></i>
+                                                </a>
                                                 <a asp-action="Edit" asp-route-id="@item.RoomId" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
                                                     <i class='bx bx-edit-alt'></i>
                                                 </a>

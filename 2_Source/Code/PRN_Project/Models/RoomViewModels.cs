@@ -78,4 +78,10 @@ namespace PRN_Project.Models
             }
         }
     }
+
+    public class RoomEquipmentsViewModel
+    {
+        public Room Room { get; set; } = null!;
+        public List<Equipment> Equipments { get; set; } = new List<Equipment>();
+    }
 }

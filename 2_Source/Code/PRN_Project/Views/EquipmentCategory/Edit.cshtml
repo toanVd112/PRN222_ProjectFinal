@@ -1,0 +1,46 @@
+@model PRN_Project.Models.EditCategoryViewModel
+
+@{
+    ViewData["Title"] = "Chỉnh sửa danh mục thiết bị";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800"><i class='bx bx-edit'></i> Chỉnh sửa danh mục thiết bị</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class='bx bx-arrow-back'></i> Quay lại danh sách
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow border-0 rounded-3">
+                <div class="card-body p-4">
+                    <form asp-action="Edit" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="CategoryId" />
+
+                        <div class="mb-4">
+                            <label asp-for="CategoryName" class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class='bx bx-tag-alt'></i></span>
+                                <input asp-for="CategoryName" class="form-control" placeholder="Nhập tên loại thiết bị" />
+                            </div>
+                            <span asp-validation-for="CategoryName" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                                <i class='bx bx-save'></i> Cập nhật danh mục
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
