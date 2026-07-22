@@ -1,0 +1,271 @@
+@model PRN_Project.Models.Equipment
+
+@{
+    ViewData["Title"] = $"Chi tiết & Lịch sử {Model.AssetCode}";
+    var transfers = Model.TransferHistories.OrderByDescending(t => t.TransferDate).ToList();
+    var statusLogs = Model.EquipmentStatusLogs.OrderByDescending(l => l.ChangedAt).ToList();
+}
+
+<div class="container-fluid py-4">
+    <!-- Navigation back -->
+    <div class="mb-4">
+        <a asp-action="Index" class="btn btn-link text-decoration-none text-muted p-0 d-inline-flex align-items-center">
+            <i class='bx bx-left-arrow-alt fs-4 me-1'></i> Quay lại danh sách thiết bị
+        </a>
+    </div>
+
+    <!-- Main Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center gap-3">
+                <h2 class="mb-0 text-primary fw-bold">@Model.AssetCode</h2>
+                @switch (Model.Status)
+                {
+                    case "InUse":
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-7"><i class='bx bx-check-circle me-1'></i>Đang sử dụng</span>
+                        break;
+                    case "PendingRepair":
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fs-7"><i class='bx bx-error-circle me-1'></i>Chờ sửa chữa</span>
+                        break;
+                    case "UnderMaintenance":
+                        <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 fs-7"><i class='bx bx-wrench me-1'></i>Đang bảo trì ngoài</span>
+                        break;
+                    case "ProposedDisposal":
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fs-7"><i class='bx bx-trash me-1'></i>Đề xuất thanh lý</span>
+                        break;
+                    case "Disposed":
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 fs-7"><i class='bx bx-block me-1'></i>Đã thanh lý</span>
+                        break;
+                    default:
+                        <span class="badge bg-light text-dark border px-3 py-2 fs-7">@Model.Status</span>
+                        break;
+                }
+            </div>
+            <p class="text-muted mb-0 mt-1">Hồ sơ chi tiết và lịch sử cập nhật của thiết bị.</p>
+        </div>
+        <div class="col-auto d-flex gap-2">
+            @if (Model.Status != "ProposedDisposal" && Model.Status != "Disposed")
+            {
+                <a asp-action="ProposeDisposal" asp-route-id="@Model.EquipmentId" class="btn btn-outline-danger d-inline-flex align-items-center shadow-sm">
+                    <i class='bx bx-trash me-1.5 fs-5'></i> Đề xuất thanh lý
+                </a>
+                <a asp-action="Edit" asp-route-id="@Model.EquipmentId" class="btn btn-outline-primary d-inline-flex align-items-center shadow-sm">
+                    <i class='bx bx-edit-alt me-1.5 fs-5'></i> Chỉnh sửa thông tin
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Sidebar Info Card -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-3 bg-white h-100">
+                <div class="card-header bg-light border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold text-dark"><i class='bx bx-info-circle me-2 align-middle text-primary'></i>Thông số Thiết bị</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3 pb-3 border-bottom">
+                        <span class="text-muted d-block uppercase fs-8 fw-semibold">Tên thiết bị</span>
+                        <span class="text-dark fw-bold fs-5">@Model.EquipmentName</span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Loại thiết bị</span>
+                            <span class="text-dark fw-medium">@Model.Category.CategoryName</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Vị trí hiện tại</span>
+                            <span class="text-dark fw-medium">
+                                <i class='bx bx-door-open text-primary me-1'></i>
+                                @(Model.CurrentRoom != null ? $"{Model.CurrentRoom.RoomCode} - {Model.CurrentRoom.RoomName}" : "Chưa gán / Lưu kho")
+                            </span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Hãng sản xuất</span>
+                            <span class="text-dark">@(Model.Manufacturer ?? "Chưa rõ")</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Số Serial (S/N)</span>
+                            <span class="text-dark">@(Model.SerialNumber ?? "Không có")</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Nhà cung cấp</span>
+                            <span class="text-dark">@(Model.Supplier ?? "Chưa rõ")</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Ngày mua</span>
+                            <span class="text-dark">@(Model.PurchaseDate?.ToString("dd/MM/yyyy") ?? "Chưa rõ")</span>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-muted d-block fs-8 fw-semibold">Hạn bảo hành</span>
+                            <span class="text-dark">
+                                @(Model.WarrantyExpiry?.ToString("dd/MM/yyyy") ?? "Không có bảo hành")
+                                @if (Model.WarrantyExpiry.HasValue)
+                                {
+                                    if (Model.WarrantyExpiry.Value < DateOnly.FromDateTime(DateTime.Today))
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 px-2 py-0.5 fs-9">Hết hạn</span>
+                                    }
+                                    else if (Model.WarrantyExpiry.Value <= DateOnly.FromDateTime(DateTime.Today.AddDays(30)))
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle ms-1 px-2 py-0.5 fs-9">Sắp hết hạn</span>
+                                    }
+                                }
+                            </span>
+                        </div>
+                        <div class="col-12 pt-2">
+                            <span class="text-muted d-block fs-8 fw-semibold">Ghi chú bổ sung</span>
+                            <p class="text-dark mb-0 fs-7 italic">@(string.IsNullOrWhiteSpace(Model.Notes) ? "Không có ghi chú nào." : Model.Notes)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History & Logs Tabs -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card border-0 shadow-sm rounded-3 bg-white h-100">
+                <div class="card-header bg-white border-0 p-0">
+                    <!-- Nav Tabs -->
+                    <ul class="nav nav-tabs nav-justified border-bottom" id="historyTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active py-3 fw-bold text-uppercase fs-7" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab" aria-controls="status" aria-selected="true">
+                                <i class='bx bx-history align-middle me-1.5 fs-5'></i>Nhật ký chỉnh sửa & Trạng thái
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link py-3 fw-bold text-uppercase fs-7" id="transfers-tab" data-bs-toggle="tab" data-bs-target="#transfers" type="button" role="tab" aria-controls="transfers" aria-selected="false">
+                                <i class='bx bx-transfer align-middle me-1.5 fs-5'></i>Lịch sử luân chuyển phòng
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body p-4">
+                    <div class="tab-content" id="historyTabsContent">
+                        
+                        <!-- TAB 1: Edit & Status History -->
+                        <div class="tab-pane fade show active" id="status" role="tabpanel" aria-labelledby="status-tab">
+                            @if (!statusLogs.Any())
+                            {
+                                <div class="text-center py-5 text-muted">
+                                    <i class='bx bx-info-circle fs-1 mb-2 d-block'></i>
+                                    Thiết bị chưa từng thay đổi trạng thái hoặc chỉnh sửa thông số.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="timeline">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped align-middle">
+                                            <thead>
+                                                <tr class="table-light text-muted uppercase fs-8">
+                                                    <th>Thời gian</th>
+                                                    <th>Người thực hiện</th>
+                                                    <th>Nội dung thay đổi</th>
+                                                    <th>Giá trị cũ</th>
+                                                    <th>Giá trị mới</th>
+                                                    <th>Lý do</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var log in statusLogs)
+                                                {
+                                                    <tr>
+                                                        <td class="fs-7 text-nowrap">@log.ChangedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                        <td>
+                                                            <span class="fw-medium">@log.ChangedByNavigation.FullName</span>
+                                                            <small class="text-muted d-block">(@log.ChangedByNavigation.Role)</small>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge bg-light text-dark border">@log.FieldChanged</span>
+                                                        </td>
+                                                        <td>
+                                                            @if (log.FieldChanged == "Status")
+                                                            {
+                                                                <span class="text-muted">@log.OldStatus</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-muted text-truncate d-inline-block" style="max-width: 150px;" title="@log.OldValue">@log.OldValue</span>
+                                                            }
+                                                        </td>
+                                                        <td>
+                                                            @if (log.FieldChanged == "Status")
+                                                            {
+                                                                <span class="text-primary fw-semibold">@log.NewStatus</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-dark fw-medium text-truncate d-inline-block" style="max-width: 150px;" title="@log.NewValue">@log.NewValue</span>
+                                                            }
+                                                        </td>
+                                                        <td class="fs-7 text-muted">@(string.IsNullOrWhiteSpace(log.ChangeReason) ? "Không ghi chú" : log.ChangeReason)</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- TAB 2: Room Transfer History -->
+                        <div class="tab-pane fade" id="transfers" role="tabpanel" aria-labelledby="transfers-tab">
+                            @if (!transfers.Any())
+                            {
+                                <div class="text-center py-5 text-muted">
+                                    <i class='bx bx-info-circle fs-1 mb-2 d-block'></i>
+                                    Thiết bị chưa từng luân chuyển phòng học.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-striped align-middle">
+                                        <thead>
+                                            <tr class="table-light text-muted uppercase fs-8">
+                                                <th>Thời gian</th>
+                                                <th>Phòng đi</th>
+                                                <th>Phòng đến</th>
+                                                <th>Người điều chuyển</th>
+                                                <th>Lý do</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var trans in transfers)
+                                            {
+                                                <tr>
+                                                    <td class="fs-7 text-nowrap">@trans.TransferDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                                    <td>
+                                                        @if (trans.FromRoom != null)
+                                                        {
+                                                            <span class="text-muted"><i class='bx bx-door-open me-1'></i>@trans.FromRoom.RoomCode - @trans.FromRoom.RoomName</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted italic"><i class='bx bx-archive-in me-1'></i>Khởi tạo / Lưu kho</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <span class="text-dark fw-bold"><i class='bx bx-door-open me-1 text-primary'></i>@trans.ToRoom.RoomCode - @trans.ToRoom.RoomName</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="fw-medium">@trans.TransferredByNavigation.FullName</span>
+                                                        <small class="text-muted d-block">(@trans.TransferredByNavigation.Role)</small>
+                                                    </td>
+                                                    <td class="fs-7 text-muted">@trans.Reason</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

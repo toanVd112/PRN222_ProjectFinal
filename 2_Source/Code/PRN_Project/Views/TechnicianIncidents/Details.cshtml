@@ -1,0 +1,207 @@
+@model PRN_Project.Models.IncidentReport
+
+@{
+    ViewData["Title"] = $"Chi tiết Sự cố #{Model.IncidentId}";
+}
+
+<div class="container py-4">
+    <!-- Back to list -->
+    <div class="mb-4">
+        <a asp-action="Index" class="btn btn-link text-decoration-none text-muted p-0 d-inline-flex align-items-center">
+            <i class='bx bx-left-arrow-alt fs-4 me-1'></i> Quay lại danh sách sự cố
+        </a>
+    </div>
+
+    <!-- Feedback messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 border-start border-success border-4 mb-4" role="alert">
+            <i class='bx bx-check-circle me-2 fs-5 align-middle text-success'></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 border-start border-danger border-4 mb-4" role="alert">
+            <i class='bx bx-error-circle me-2 fs-5 align-middle text-danger'></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show shadow-sm border-0 border-start border-warning border-4 mb-4" role="alert">
+            <i class='bx bx-error-circle me-2 fs-5 align-middle text-warning'></i>
+            @TempData["WarningMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Main Grid -->
+    <div class="row g-4">
+        <!-- Incident Info & Equipment Spec -->
+        <div class="col-lg-6 col-12">
+            <!-- Incident details card -->
+            <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
+                <div class="card-header bg-light border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold text-dark"><i class='bx bx-info-circle me-2 align-middle text-primary'></i>Thông tin sự cố</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3 pb-3 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted d-block fs-8 uppercase fw-semibold">Mã sự cố</span>
+                            <span class="text-dark fw-bold fs-5">INC-#@Model.IncidentId</span>
+                        </div>
+                        <div>
+                            @switch (Model.Status)
+                            {
+                                case "Pending":
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2"><i class='bx bx-time-five me-1'></i>Chờ tiếp nhận</span>
+                                    break;
+                                case "InProgress":
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2"><i class='bx bx-play-circle me-1'></i>Đang sửa chữa</span>
+                                    break;
+                                case "Resolved":
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2"><i class='bx bx-check-circle me-1'></i>Đã giải quyết</span>
+                                    break;
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row g-3 fs-7 mb-4">
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Phòng học</span>
+                            <span class="text-dark fw-medium">@Model.Room.RoomCode - @Model.Room.RoomName</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Người báo hỏng</span>
+                            <span class="text-dark">@Model.ReportedByNavigation.FullName</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Thời gian báo hỏng</span>
+                            <span class="text-dark">@Model.ReportedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Kỹ thuật viên phụ trách</span>
+                            <span class="text-dark">@(Model.AssignedToNavigation?.FullName ?? "Chưa gán")</span>
+                        </div>
+                        <div class="col-12 border-top pt-2">
+                            <span class="text-muted d-block fs-8 fw-semibold">Mô tả sự cố của giảng viên</span>
+                            <p class="text-dark mb-0 bg-light p-3 rounded border fs-7 italic">@Model.Description</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment details card -->
+            <div class="card border-0 shadow-sm rounded-3 bg-white">
+                <div class="card-header bg-light border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold text-dark"><i class='bx bx-laptop me-2 align-middle text-primary'></i>Thông số thiết bị báo hỏng</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3 fs-7">
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Mã tài sản</span>
+                            <span class="text-dark fw-bold">@Model.Equipment.AssetCode</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Tên thiết bị</span>
+                            <span class="text-dark fw-medium">@Model.Equipment.EquipmentName</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Loại thiết bị</span>
+                            <span class="text-dark">@Model.Equipment.Category.CategoryName</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Số Serial (S/N)</span>
+                            <span class="text-dark">@(Model.Equipment.SerialNumber ?? "Không có")</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Trạng thái thiết bị</span>
+                            <span class="text-dark fw-medium">@Model.Equipment.Status</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block fs-8 fw-semibold">Hãng sản xuất</span>
+                            <span class="text-dark">@(Model.Equipment.Manufacturer ?? "Chưa rõ")</span>
+                        </div>
+                        <div class="col-12 pt-3 border-top d-flex justify-content-end">
+                            <a asp-controller="Equipments" asp-action="Details" asp-route-id="@Model.EquipmentId" target="_blank" class="btn btn-sm btn-outline-info">
+                                <i class='bx bx-history me-1'></i> Xem lịch sử thiết bị này
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Panel -->
+        <div class="col-lg-6 col-12">
+            
+            <!-- Contextual action forms based on incident state -->
+            @if (Model.Status == "Pending")
+            {
+                <div class="card border-0 shadow-sm rounded-3 bg-white h-100">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="card-title mb-0 fw-bold"><i class='bx bx-check-double me-2 align-middle fs-5'></i>Tiếp nhận sự cố</h5>
+                    </div>
+                    <div class="card-body p-4 d-flex flex-column justify-content-center text-center">
+                        <i class='bx bx-time-five fs-1 text-warning mb-3'></i>
+                        <h6 class="fw-bold">Báo cáo sự cố đang ở trạng thái Chờ tiếp nhận</h6>
+                        <p class="text-muted fs-7 max-width-400 mx-auto mb-4">Để xử lý sự cố này, trước tiên bạn cần Tiếp nhận yêu cầu. Trạng thái của sự cố sẽ chuyển sang **Đang sửa chữa (InProgress)** và bạn sẽ được ghi nhận là kỹ thuật viên phụ trách.</p>
+                        
+                        <form asp-action="Accept" asp-route-id="@Model.IncidentId" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-primary px-5 py-2.5 shadow-sm">
+                                <i class='bx bx-wrench me-1.5 align-middle fs-5'></i> Tiếp nhận yêu cầu xử lý
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else if (Model.Status == "InProgress")
+            {
+                <!-- Hoàn thành sửa chữa tại chỗ -->
+                <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="card-title mb-0 fw-bold"><i class='bx bx-badge-check me-2 align-middle fs-5'></i>Hoàn thành sửa chữa tại chỗ</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="text-muted fs-7">Sử dụng biểu mẫu này nếu thiết bị đã được kỹ thuật viên sửa chữa thành công tại chỗ. Trạng thái thiết bị sẽ tự động phục hồi về **Đang sử dụng (InUse)**.</p>
+                        
+                        <form asp-action="Resolve" asp-route-id="@Model.IncidentId" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-3">
+                                <label for="ResolutionNote" class="form-label fw-semibold text-dark">Mô tả chi tiết kết quả xử lý <span class="text-danger">*</span></label>
+                                <textarea id="ResolutionNote" name="resolutionNote" class="form-control" rows="4" placeholder="Nhập những nội dung đã sửa đổi, ví dụ: Cài đặt lại driver card màn hình, đấu nối lại đầu cắm cáp HDMI, thay thế pin micro mới..." required></textarea>
+                                <small class="text-muted d-block mt-1">Nội dung này sẽ được gửi tới giảng viên báo lỗi và lưu vào lịch sử.</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-success px-4 shadow-sm">
+                                <i class='bx bx-check me-1 align-middle fs-5'></i> Hoàn thành sửa chữa
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else if (Model.Status == "Resolved")
+            {
+                <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="card-title mb-0 fw-bold"><i class='bx bx-check-circle me-2 align-middle fs-5'></i>Kết quả xử lý sự cố</h5>
+                    </div>
+                    <div class="card-body p-4 fs-7">
+                        <div class="mb-3">
+                            <span class="text-muted d-block fs-8 fw-semibold">Thời gian hoàn thành</span>
+                            <span class="text-dark fw-bold">@Model.ResolvedAt?.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="text-muted d-block fs-8 fw-semibold">Nội dung giải quyết thực tế</span>
+                            <p class="text-dark mb-0 bg-light p-3 rounded border italic">@Model.ResolutionNote</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
