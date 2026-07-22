@@ -47,4 +47,16 @@ namespace PRN_Project.Models
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng chọn Vai trò")]
         public string Role { get; set; } = null!;
     }
+
+    public class UserDetailsViewModel
+    {
+        public int UserId { get; set; }
+        public string UserCode { get; set; } = null!;
+        public string FullName { get; set; } = null!;
+        public string Email { get; set; } = null!;
+        public string Role { get; set; } = null!;
+        public bool IsActive { get; set; }
+        public System.DateTime CreatedAt { get; set; }
+        public string? AvatarUrl { get; set; }
+    }
 }

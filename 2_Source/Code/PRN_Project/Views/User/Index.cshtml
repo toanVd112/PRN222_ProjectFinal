@@ -95,6 +95,9 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group" role="group">
+                                        <a asp-action="Details" asp-route-id="@item.UserId" class="btn btn-sm btn-outline-info" title="Xem chi tiết">
+                                            <i class='bx bx-show'></i>
+                                        </a>
                                         <a asp-action="Edit" asp-route-id="@item.UserId" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
                                             <i class='bx bx-edit-alt'></i>
                                         </a>
