@@ -49,7 +49,8 @@ namespace PRN_Project.Controllers
             if (page < 1) page = 1;
 
             var users = await query
-                .OrderByDescending(u => u.CreatedAt)
+                .OrderBy(u => u.Role)
+                .ThenByDescending(u => u.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -63,6 +64,30 @@ namespace PRN_Project.Controllers
                 CurrentPage = page,
                 TotalPages = totalPages,
                 PageSize = pageSize
+            };
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var model = new UserDetailsViewModel
+            {
+                UserId = user.UserId,
+                UserCode = user.UserCode,
+                FullName = user.FullName,
+                Email = user.Email,
+                Role = user.Role,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt,
+                AvatarUrl = user.AvatarUrl
             };
 
             return View(model);
