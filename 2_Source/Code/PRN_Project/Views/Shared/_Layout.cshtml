@@ -39,7 +39,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a asp-controller="Room" asp-action="Index" class="@(currentController == "Room" ? "active" : "")">
                             <i class='bx bx-door-open'></i> Quản lý Phòng học
                         </a>
                     </li>
@@ -53,6 +53,7 @@
                 @if (User.IsInRole("Technician") || User.IsInRole("Admin"))
                 {
                     <li class="menu-header">Kỹ thuật (Technician)</li>
+
                     <li>
                         <a href="#">
                             <i class='bx bx-laptop'></i> Kho Thiết bị

@@ -63,10 +63,10 @@ namespace PRN_Project.Models
             EnsureCategory(context, "Máy tính", "Máy tính phục vụ phòng học và thực hành", now);
             context.SaveChanges();
 
-            EnsureRoom(context, "P101", "Phòng học P101", "Tầng 1 - Khu A", 60, "Lý thuyết", true, now);
-            EnsureRoom(context, "P202", "Phòng học P202", "Tầng 2 - Khu A", 45, "Lý thuyết", true, now);
-            EnsureRoom(context, "LAB301", "Phòng thực hành LAB301", "Tầng 3 - Khu B", 35, "Thực hành", true, now);
-            EnsureRoom(context, "P404", "Phòng bảo trì P404", "Tầng 4 - Khu C", 20, "Khác", false, now);
+            EnsureRoom(context, "AL101", "AL101", "Alpha", 60, "Phòng học (P)", true, now);
+            EnsureRoom(context, "AL202", "AL202", "Alpha", 45, "Phòng học (P)", true, now);
+            EnsureRoom(context, "BE301", "BE301", "Beta", 35, "Phòng LAB", true, now);
+            EnsureRoom(context, "DE404", "DE404", "Delta", 20, "Nhà vệ sinh (WC)", false, now);
             context.SaveChanges();
 
             var adminUser = context.Users.FirstOrDefault(user => user.UserCode == "ADMIN001")
@@ -81,9 +81,9 @@ namespace PRN_Project.Models
             var audioCategory = context.EquipmentCategories.First(category => category.CategoryName == "Âm thanh");
             var computerCategory = context.EquipmentCategories.First(category => category.CategoryName == "Máy tính");
 
-            var roomP101 = context.Rooms.First(room => room.RoomCode == "P101");
-            var roomP202 = context.Rooms.First(room => room.RoomCode == "P202");
-            var roomLab301 = context.Rooms.First(room => room.RoomCode == "LAB301");
+            var roomP101 = context.Rooms.First(room => room.RoomCode == "AL101");
+            var roomP202 = context.Rooms.First(room => room.RoomCode == "AL202");
+            var roomLab301 = context.Rooms.First(room => room.RoomCode == "BE301");
 
             EnsureEquipment(context, "EQ-P101-PRJ-001", "Máy chiếu Epson EB-X49", projectorCategory.CategoryId, roomP101.RoomId, "EPX49-P101-001", "Epson", "InUse", adminUser.UserId, now);
             EnsureEquipment(context, "EQ-P101-SPK-001", "Loa treo tường TOA BS-1030", audioCategory.CategoryId, roomP101.RoomId, "TOA-P101-001", "TOA", "InUse", adminUser.UserId, now);
