@@ -1,0 +1,79 @@
+@model PRN_Project.Models.EditRoomViewModel
+
+@{
+    ViewData["Title"] = "Cập nhật Phòng học";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800">Cập nhật Phòng học</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class='bx bx-arrow-back'></i> Quay lại
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Thông tin phòng học</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="RoomId" />
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label asp-for="RoomCode" class="form-label">Mã phòng <span class="text-danger">*</span></label>
+                                <input asp-for="RoomCode" class="form-control" />
+                                <span asp-validation-for="RoomCode" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="RoomType" class="form-label">Loại phòng <span class="text-danger">*</span></label>
+                                <select asp-for="RoomType" class="form-select">
+                                    <option value="">-- Chọn loại phòng --</option>
+                                    <option value="Phòng học (P)">Phòng học (P)</option>
+                                    <option value="Phòng LAB">Phòng LAB</option>
+                                    <option value="Nhà vệ sinh (WC)">Nhà vệ sinh (WC)</option>
+                                    <option value="Phòng hội trường">Phòng hội trường</option>
+                                </select>
+                                <span asp-validation-for="RoomType" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Capacity" class="form-label">Sức chứa</label>
+                                <input asp-for="Capacity" class="form-control" type="number" min="1" max="1000" />
+                                <span asp-validation-for="Capacity" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Location" class="form-label">Vị trí (Tòa nhà) <span class="text-danger">*</span></label>
+                            <select asp-for="Location" class="form-select">
+                                <option value="">-- Chọn tòa nhà --</option>
+                                <option value="Alpha">Tòa Alpha (Mã bắt đầu: AL)</option>
+                                <option value="Beta">Tòa Beta (Mã bắt đầu: BE)</option>
+                                <option value="Delta">Tòa Delta (Mã bắt đầu: DE)</option>
+                                <option value="Gamma">Tòa Gamma (Mã bắt đầu: GA)</option>
+                            </select>
+                            <span asp-validation-for="Location" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class='bx bx-save'></i> Cập nhật
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
