@@ -1,0 +1,75 @@
+@model PRN_Project.Models.CreateUserViewModel
+
+@{
+    ViewData["Title"] = "Thêm tài khoản mới";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800"><i class='bx bx-user-plus'></i> Thêm tài khoản mới</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class='bx bx-arrow-back'></i> Quay lại danh sách
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Thông tin tài khoản</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="UserCode" class="form-label">Mã người dùng (Ví dụ: LEC01, TECH02) <span class="text-danger">*</span></label>
+                                <input asp-for="UserCode" class="form-control" maxlength="8" />
+                                <span asp-validation-for="UserCode" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Role" class="form-label">Vai trò <span class="text-danger">*</span></label>
+                                <select asp-for="Role" class="form-select">
+                                    <option value="">-- Chọn vai trò --</option>
+                                    <option value="Admin">Admin (Quản trị viên)</option>
+                                    <option value="Technician">Technician (Nhân viên quản lý)</option>
+                                    <option value="Lecturer">Lecturer (Giảng viên)</option>
+                                </select>
+                                <span asp-validation-for="Role" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                            <input asp-for="FullName" class="form-control" />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Email" class="form-label">Email (Sẽ nhận thông báo và mật khẩu) <span class="text-danger">*</span></label>
+                            <input asp-for="Email" type="email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="alert alert-info border-start-4 border-info">
+                            <i class='bx bx-info-circle me-2'></i> 
+                            Hệ thống sẽ tự động gửi một email chứa <strong>Mật khẩu mặc định</strong> (Cems@123) tới địa chỉ email trên để người dùng đăng nhập.
+                        </div>
+
+                        <hr />
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class='bx bx-save'></i> Lưu và Gửi Email
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,73 @@
+@model PRN_Project.Models.EditUserViewModel
+
+@{
+    ViewData["Title"] = "Chỉnh sửa tài khoản";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800"><i class='bx bx-edit'></i> Chỉnh sửa tài khoản</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class='bx bx-arrow-back'></i> Quay lại danh sách
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Thông tin tài khoản: @Model.Email</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="UserId" />
+                        <input type="hidden" asp-for="Email" />
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="UserCode" class="form-label">Mã người dùng <span class="text-danger">*</span></label>
+                                <input asp-for="UserCode" class="form-control" maxlength="8" />
+                                <span asp-validation-for="UserCode" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Role" class="form-label">Vai trò <span class="text-danger">*</span></label>
+                                @{
+                                    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                                    bool isSelf = currentUserId == Model.UserId.ToString();
+                                }
+                                <select asp-for="Role" class="form-select" disabled="@(isSelf ? "disabled" : null)">
+                                    <option value="Admin">Admin (Quản trị viên)</option>
+                                    <option value="Technician">Technician (Nhân viên quản lý)</option>
+                                    <option value="Lecturer">Lecturer (Giảng viên)</option>
+                                </select>
+                                @if (isSelf)
+                                {
+                                    <input type="hidden" asp-for="Role" />
+                                    <small class="text-warning"><i class='bx bx-info-circle'></i> Bạn không thể tự thay đổi vai trò của mình.</small>
+                                }
+                                <span asp-validation-for="Role" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning border-start-4 border-warning">
+                            <i class='bx bx-shield-quarter me-2'></i> 
+                            Bạn không thể thay đổi địa chỉ Email và Họ Tên người dùng.
+                        </div>
+
+                        <hr />
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class='bx bx-save'></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

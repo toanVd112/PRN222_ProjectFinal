@@ -19,9 +19,9 @@
 
     <div id="wrapper">
         <aside id="sidebar">
-            <div class="sidebar-brand">
+            <a asp-controller="Home" asp-action="Index" class="sidebar-brand text-decoration-none" style="display: block; color: inherit;">
                 <i class='bx bx-cube-alt'></i> CEMS
-            </div>
+            </a>
             <ul class="sidebar-menu">
                 <li class="menu-header">Hệ thống</li>
                 <li>
@@ -34,7 +34,7 @@
                 {
                     <li class="menu-header">Quản trị (Admin)</li>
                     <li>
-                        <a href="#">
+                        <a asp-controller="User" asp-action="Index" class="@(currentController == "User" ? "active" : "")">
                             <i class='bx bx-user-pin'></i> Quản lý Tài khoản
                         </a>
                     </li>
@@ -128,6 +128,20 @@
             </header>
 
             <main id="page-content">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show m-4" role="alert">
+                        <i class='bx bx-check-circle me-2'></i> @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show m-4" role="alert">
+                        <i class='bx bx-error-circle me-2'></i> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
                 @RenderBody()
             </main>
         </div>
