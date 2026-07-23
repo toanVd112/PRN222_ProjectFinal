@@ -58,9 +58,22 @@
                 <a asp-controller="LecturerRooms" asp-action="Index" asp-route-roomId="@Model.RoomId" class="btn btn-outline-secondary">
                     <i class='bx bx-arrow-back'></i> Quay lại phòng học
                 </a>
-                <a asp-controller="IncidentReports" asp-action="Index" class="btn btn-outline-primary">
-                    <i class='bx bx-list-check'></i> Lịch sử báo cáo
-                </a>
+                <div class="d-flex gap-2">
+                    <a asp-controller="IncidentReports" asp-action="Index" class="btn btn-outline-primary">
+                        <i class='bx bx-list-check'></i> Lịch sử báo cáo
+                    </a>
+                    @if (Model.Status == "Pending" && (DateTime.Now - Model.ReportedAt).TotalMinutes <= 5)
+                    {
+                        <a asp-controller="IncidentReports" asp-action="Edit" asp-route-id="@Model.IncidentId" class="btn btn-warning text-white">
+                            <i class='bx bx-edit'></i> Sửa
+                        </a>
+                        <form asp-controller="IncidentReports" asp-action="Cancel" asp-route-id="@Model.IncidentId" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn hoàn tác báo cáo này không?');">
+                            <button type="submit" class="btn btn-danger">
+                                <i class='bx bx-undo'></i> Hoàn tác
+                            </button>
+                        </form>
+                    }
+                </div>
             </div>
         </div>
     </div>

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -102,6 +103,18 @@ namespace PRN_Project.Controllers
                 _context.Rooms.Add(room);
                 await _context.SaveChangesAsync();
 
+                var log = new RoomStatusLog
+                {
+                    RoomId = room.RoomId,
+                    ChangedBy = GetCurrentUserId(),
+                    OldStatus = null,
+                    NewStatus = true,
+                    ChangeReason = "Thêm phòng mới",
+                    ChangedAt = DateTime.Now
+                };
+                _context.RoomStatusLogs.Add(log);
+                await _context.SaveChangesAsync();
+
                 TempData["SuccessMessage"] = "Thêm phòng học mới thành công.";
                 return RedirectToAction(nameof(Index));
             }
@@ -192,7 +205,20 @@ namespace PRN_Project.Controllers
                 }
             }
 
+            var oldStatus = room.IsActive;
             room.IsActive = !room.IsActive;
+
+            var log = new RoomStatusLog
+            {
+                RoomId = room.RoomId,
+                ChangedBy = GetCurrentUserId(),
+                OldStatus = oldStatus,
+                NewStatus = room.IsActive,
+                ChangeReason = room.IsActive ? "Mở khóa phòng học" : "Tạm ngưng phòng học",
+                ChangedAt = DateTime.Now
+            };
+            _context.RoomStatusLogs.Add(log);
+
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = room.IsActive == true ? "Đã mở khóa phòng học." : "Đã tạm ngưng phòng học.";
@@ -211,6 +237,66 @@ namespace PRN_Project.Controllers
                 _ => ""
             };
             return roomCode.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Equipments(int id)
+        {
+            var room = await _context.Rooms.FindAsync(id);
+            if (room == null)
+            {
+                return NotFound();
+            }
+
+            var equipments = await _context.Equipments
+                .Include(e => e.Category)
+                .Where(e => e.CurrentRoomId == id)
+                .OrderBy(e => e.Category.CategoryName)
+                .ThenBy(e => e.EquipmentName)
+                .ToListAsync();
+
+            var model = new RoomEquipmentsViewModel
+            {
+                Room = room,
+                Equipments = equipments
+            };
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ActivityHistory(int page = 1)
+        {
+            var query = _context.RoomStatusLogs
+                .Include(l => l.Room)
+                .Include(l => l.ChangedByNavigation)
+                .OrderByDescending(l => l.ChangedAt);
+
+            int pageSize = 10;
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            page = Math.Max(1, Math.Min(page, totalPages > 0 ? totalPages : 1));
+
+            var logs = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var viewModel = new RoomHistoryViewModel
+            {
+                Logs = logs,
+                CurrentPage = page,
+                TotalPages = totalPages,
+                TotalItems = totalItems
+            };
+
+            return View(viewModel);
+        }
+
+        private int GetCurrentUserId()
+        {
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(userIdValue, out var userId) ? userId : 0;
         }
     }
 }

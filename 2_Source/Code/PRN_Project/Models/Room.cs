@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace PRN_Project.Models;
@@ -28,4 +28,8 @@ public partial class Room
     public virtual ICollection<TransferHistory> TransferHistoryFromRooms { get; set; } = new List<TransferHistory>();
 
     public virtual ICollection<TransferHistory> TransferHistoryToRooms { get; set; } = new List<TransferHistory>();
+
+    public virtual ICollection<RoomStatusLog> RoomStatusLogs { get; set; } = new List<RoomStatusLog>();
+
+    public virtual ICollection<LecturerRoom> LecturerRooms { get; set; } = new List<LecturerRoom>();
 }

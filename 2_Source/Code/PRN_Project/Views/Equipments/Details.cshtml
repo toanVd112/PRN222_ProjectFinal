@@ -47,7 +47,7 @@
             @if (Model.Status != "ProposedDisposal" && Model.Status != "Disposed")
             {
                 <a asp-action="ProposeDisposal" asp-route-id="@Model.EquipmentId" class="btn btn-outline-danger d-inline-flex align-items-center shadow-sm">
-                    <i class='bx bx-trash me-1.5 fs-5'></i> Đề xuất thanh lý
+                    <i class='bx bx-trash me-1.5 fs-5'></i> @(User.IsInRole("Admin") ? "Thanh lý thiết bị" : "Đề xuất thanh lý")
                 </a>
                 <a asp-action="Edit" asp-route-id="@Model.EquipmentId" class="btn btn-outline-primary d-inline-flex align-items-center shadow-sm">
                     <i class='bx bx-edit-alt me-1.5 fs-5'></i> Chỉnh sửa thông tin

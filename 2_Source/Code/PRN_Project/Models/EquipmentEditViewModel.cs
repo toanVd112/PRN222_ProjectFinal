@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace PRN_Project.Models
 {
-    public class EquipmentEditViewModel
+    public class EquipmentEditViewModel : IValidatableObject
     {
         [Required]
         public int EquipmentId { get; set; }
@@ -49,5 +49,13 @@ namespace PRN_Project.Models
 
         public List<SelectListItem> Categories { get; set; } = new();
         public List<SelectListItem> Statuses { get; set; } = new();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (PurchaseDate.HasValue && PurchaseDate.Value > DateOnly.FromDateTime(DateTime.Today))
+            {
+                yield return new ValidationResult("Ngày mua không được lớn hơn ngày hiện tại.", new[] { nameof(PurchaseDate) });
+            }
+        }
     }
 }

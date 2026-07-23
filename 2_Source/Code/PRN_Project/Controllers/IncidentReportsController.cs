@@ -186,7 +186,7 @@ namespace PRN_Project.Controllers
                 });
 
                 await _context.SaveChangesAsync();
-                AddTechnicianNotifications(incident, equipment);
+                AddAdminNotifications(incident, equipment);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -196,7 +196,147 @@ namespace PRN_Project.Controllers
                 throw;
             }
 
-            TempData["SuccessMessage"] = "Báo cáo sự cố đã được gửi cho bộ phận kỹ thuật.";
+            TempData["SuccessMessage"] = "Báo cáo sự cố đã được gửi cho Ban quản trị (Admin).";
+            return RedirectToAction("Index", "LecturerRooms", new { roomId = equipment.CurrentRoomId });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return RedirectToAction("Login", "Auth");
+
+            var incident = await _context.IncidentReports
+                .Include(i => i.Equipment)
+                .ThenInclude(e => e.Category)
+                .Include(i => i.Room)
+                .FirstOrDefaultAsync(i => i.IncidentId == id && i.ReportedBy == userId.Value);
+
+            if (incident == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy báo cáo hoặc bạn không có quyền.";
+                return RedirectToAction("Index", "LecturerRooms");
+            }
+
+            if ((DateTime.Now - incident.ReportedAt).TotalMinutes > 5 || incident.Status != IncidentStatusPending)
+            {
+                TempData["ErrorMessage"] = "Đã quá 5 phút kể từ lúc báo cáo hoặc báo cáo đã được xử lý, không thể chỉnh sửa.";
+                return RedirectToAction("Details", new { id = incident.IncidentId });
+            }
+
+            var model = new SubmitIncidentViewModel
+            {
+                EquipmentId = incident.EquipmentId,
+                RoomId = incident.RoomId,
+                AssetCode = incident.Equipment.AssetCode,
+                EquipmentName = incident.Equipment.EquipmentName,
+                CategoryName = incident.Equipment.Category.CategoryName,
+                RoomDisplayName = $"{incident.Room.RoomCode} - {incident.Room.RoomName}",
+                Description = incident.Description
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, SubmitIncidentViewModel model)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return RedirectToAction("Login", "Auth");
+
+            var incident = await _context.IncidentReports
+                .Include(i => i.Equipment)
+                .ThenInclude(e => e.Category)
+                .Include(i => i.Room)
+                .FirstOrDefaultAsync(i => i.IncidentId == id && i.ReportedBy == userId.Value);
+
+            if (incident == null)
+            {
+                return NotFound();
+            }
+
+            if ((DateTime.Now - incident.ReportedAt).TotalMinutes > 5 || incident.Status != IncidentStatusPending)
+            {
+                TempData["ErrorMessage"] = "Đã quá 5 phút hoặc báo cáo đã được xử lý, không thể chỉnh sửa.";
+                return RedirectToAction("Details", new { id = incident.IncidentId });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ApplyEquipmentDetails(model, incident.Equipment);
+                return View(model);
+            }
+
+            incident.Description = model.Description?.Trim() ?? string.Empty;
+            _context.Update(incident);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Đã cập nhật báo cáo thành công.";
+            return RedirectToAction("Details", new { id = incident.IncidentId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return RedirectToAction("Login", "Auth");
+
+            var incident = await _context.IncidentReports
+                .Include(i => i.Equipment)
+                .FirstOrDefaultAsync(i => i.IncidentId == id && i.ReportedBy == userId.Value);
+
+            if (incident == null)
+            {
+                return NotFound();
+            }
+
+            if ((DateTime.Now - incident.ReportedAt).TotalMinutes > 5 || incident.Status != IncidentStatusPending)
+            {
+                TempData["ErrorMessage"] = "Đã quá 5 phút hoặc báo cáo đã được xử lý, không thể hoàn tác.";
+                return RedirectToAction("Details", new { id = incident.IncidentId });
+            }
+
+            var equipment = incident.Equipment;
+            var oldStatus = equipment.Status;
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Chuyển status incident sang Cancelled thay vì Delete
+                incident.Status = "Cancelled";
+                incident.ResolvedAt = DateTime.Now;
+                incident.ResolutionNote = "Giảng viên đã hoàn tác báo cáo.";
+                
+                // Khôi phục trạng thái thiết bị về InUse
+                equipment.Status = EquipmentStatusInUse;
+                equipment.UpdatedBy = userId.Value;
+                equipment.UpdatedAt = DateTime.Now;
+
+                _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    ChangedBy = userId.Value,
+                    OldStatus = oldStatus,
+                    NewStatus = EquipmentStatusInUse,
+                    FieldChanged = "Status",
+                    OldValue = oldStatus,
+                    NewValue = EquipmentStatusInUse,
+                    ChangeReason = "Lecturer cancelled the incident report.",
+                    ChangedAt = DateTime.Now
+                });
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+            TempData["SuccessMessage"] = "Đã hoàn tác báo cáo thành công.";
             return RedirectToAction("Index", "LecturerRooms", new { roomId = equipment.CurrentRoomId });
         }
 
@@ -242,14 +382,14 @@ namespace PRN_Project.Controllers
             model.RoomDisplayName = $"{equipment.CurrentRoom!.RoomCode} - {equipment.CurrentRoom.RoomName}";
         }
 
-        private void AddTechnicianNotifications(IncidentReport incident, Equipment equipment)
+        private void AddAdminNotifications(IncidentReport incident, Equipment equipment)
         {
-            var technicianIds = _context.Users
-                .Where(user => user.IsActive && user.Role == "Technician")
+            var adminIds = _context.Users
+                .Where(user => user.IsActive && user.Role == "Admin")
                 .Select(user => user.UserId)
                 .ToList();
 
-            if (!technicianIds.Any())
+            if (!adminIds.Any())
             {
                 return;
             }
@@ -258,11 +398,11 @@ namespace PRN_Project.Controllers
             var title = "Báo cáo sự cố mới";
             var message = $"{lecturerName} đã báo hỏng {equipment.AssetCode} - {equipment.EquipmentName} tại {equipment.CurrentRoom!.RoomCode}.";
 
-            foreach (var technicianId in technicianIds)
+            foreach (var adminId in adminIds)
             {
                 _context.Notifications.Add(new Notification
                 {
-                    RecipientId = technicianId,
+                    RecipientId = adminId,
                     Title = title,
                     Message = message,
                     Type = "IncidentReported",

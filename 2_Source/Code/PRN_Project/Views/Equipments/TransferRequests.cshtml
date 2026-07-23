@@ -1,0 +1,170 @@
+@model PRN_Project.Models.TransferRequestListViewModel
+
+@{
+    ViewData["Title"] = "Yêu cầu Luân chuyển";
+}
+
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h2 class="mb-1 text-primary fw-bold">Yêu cầu Luân chuyển</h2>
+            <p class="text-muted mb-0">Quản lý và xét duyệt các đề xuất điều chuyển vị trí thiết bị.</p>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3">
+        <div class="card-body p-4">
+            <form id="filterForm" method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="StatusSelect" class="form-label fw-semibold text-muted">Trạng thái duyệt</label>
+                    <select id="StatusSelect" name="status" class="form-select bg-light" onchange="document.getElementById('filterForm').submit();">
+                        <option value="">-- Tất cả trạng thái --</option>
+                        <option value="Pending" selected="@(Model.StatusFilter == "Pending" ? "selected" : null)">Chờ duyệt</option>
+                        <option value="Approved" selected="@(Model.StatusFilter == "Approved" ? "selected" : null)">Đã duyệt</option>
+                        <option value="Rejected" selected="@(Model.StatusFilter == "Rejected" ? "selected" : null)">Đã từ chối</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Requests List -->
+    <div class="card border-0 shadow-sm bg-white rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Tài sản</th>
+                            <th>Đề xuất bởi</th>
+                            <th>Từ phòng</th>
+                            <th>Đến phòng</th>
+                            <th>Lý do</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Requests.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class='bx bx-search-alt-2 fs-2 d-block mb-2'></i>
+                                    Không có yêu cầu luân chuyển nào.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model.Requests)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold">@item.AssetCode</div>
+                                        <small class="text-muted">@item.EquipmentName</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-medium">@item.ProposedBy</div>
+                                        <small class="text-muted">@item.ProposedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </td>
+                                    <td><span class="text-muted"><i class='bx bx-door-open me-1'></i>@item.FromRoomDisplayName</span></td>
+                                    <td><span class="text-primary fw-medium"><i class='bx bxs-door-open me-1'></i>@item.ToRoomDisplayName</span></td>
+                                    <td style="max-width: 200px;" class="text-truncate" title="@item.Reason">@item.Reason</td>
+                                    <td>
+                                        @switch (item.Status)
+                                        {
+                                            case "Pending":
+                                                <span class="badge bg-warning text-dark"><i class='bx bx-time me-1'></i>Chờ duyệt</span>
+                                                break;
+                                            case "Approved":
+                                                <span class="badge bg-success"><i class='bx bx-check me-1'></i>Đã duyệt</span>
+                                                break;
+                                            case "Rejected":
+                                                <span class="badge bg-danger"><i class='bx bx-x me-1'></i>Đã từ chối</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.Status == "Pending" && User.IsInRole("Admin"))
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewModal-@item.RequestId">
+                                                Xử lý
+                                            </button>
+                                            
+                                            <!-- Review Modal -->
+                                            <div class="modal fade" id="reviewModal-@item.RequestId" tabindex="-1" aria-labelledby="reviewModalLabel-@item.RequestId" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <form asp-action="ReviewTransferRequest" method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="RequestId" value="@item.RequestId" />
+                                                            <div class="modal-header bg-light">
+                                                                <h5 class="modal-title" id="reviewModalLabel-@item.RequestId">Duyệt Yêu Cầu Luân Chuyển</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p><strong>Thiết bị:</strong> @item.EquipmentName (@item.AssetCode)</p>
+                                                                <p><strong>Điều chuyển từ:</strong> @item.FromRoomDisplayName</p>
+                                                                <p><strong>Điều chuyển đến:</strong> <span class="text-primary">@item.ToRoomDisplayName</span></p>
+                                                                <p><strong>Lý do:</strong> @item.Reason</p>
+                                                                <hr />
+                                                                <div class="mb-3">
+                                                                    <label for="adminNote-@item.RequestId" class="form-label fw-semibold">Ghi chú của Admin (Không bắt buộc)</label>
+                                                                    <textarea class="form-control" id="adminNote-@item.RequestId" name="AdminNote" rows="2" placeholder="Nhập lời nhắn nếu từ chối hoặc phê duyệt có điều kiện..."></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer bg-light">
+                                                                <button type="submit" name="Action" value="Reject" class="btn btn-danger"><i class='bx bx-x me-1'></i>Từ chối</button>
+                                                                <button type="submit" name="Action" value="Approve" class="btn btn-success"><i class='bx bx-check me-1'></i>Phê duyệt</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        else if (item.Status != "Pending")
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detailModal-@item.RequestId">
+                                                <i class='bx bx-info-circle me-1'></i> Chi tiết
+                                            </button>
+                                            
+                                            <!-- Detail Modal -->
+                                            <div class="modal fade" id="detailModal-@item.RequestId" tabindex="-1" aria-labelledby="detailModalLabel-@item.RequestId" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-light">
+                                                            <h5 class="modal-title" id="detailModalLabel-@item.RequestId">Chi tiết Yêu Cầu Luân Chuyển</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p><strong>Thiết bị:</strong> @item.EquipmentName (@item.AssetCode)</p>
+                                                            <p><strong>Điều chuyển từ:</strong> @item.FromRoomDisplayName</p>
+                                                            <p><strong>Điều chuyển đến:</strong> <span class="text-primary">@item.ToRoomDisplayName</span></p>
+                                                            <p><strong>Lý do của Tech:</strong> @item.Reason</p>
+                                                            <hr />
+                                                            <p><strong>Người duyệt:</strong> @item.ApprovedBy</p>
+                                                            <p><strong>Thời gian duyệt:</strong> @item.DecidedAt?.ToString("dd/MM/yyyy HH:mm")</p>
+                                                            <p><strong>Phản hồi của Admin:</strong></p>
+                                                            <div class="p-3 bg-light rounded border">
+                                                                @(string.IsNullOrWhiteSpace(item.AdminNote) ? "Không có phản hồi." : item.AdminNote)
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer bg-light">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

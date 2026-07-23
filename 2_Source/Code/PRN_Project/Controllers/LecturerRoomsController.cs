@@ -20,9 +20,11 @@ namespace PRN_Project.Controllers
         public async Task<IActionResult> Index(int? roomId)
         {
             var currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return RedirectToAction("Login", "Auth");
+
             var activeRooms = await _context.Rooms
                 .AsNoTracking()
-                .Where(room => room.IsActive)
+                .Where(room => room.IsActive && room.LecturerRooms.Any(lr => lr.UserId == currentUserId))
                 .OrderBy(room => room.RoomCode)
                 .Select(room => new RoomOptionViewModel
                 {

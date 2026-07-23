@@ -9,9 +9,14 @@
         <h2 class="h3 text-gray-800"><i class='bx bx-door-open'></i> Quản lý Phòng học</h2>
         @if (User.IsInRole("Admin"))
         {
-            <a asp-action="Create" class="btn btn-primary shadow-sm">
-                <i class='bx bx-plus-circle'></i> Thêm phòng mới
-            </a>
+            <div>
+                <a asp-action="ActivityHistory" class="btn btn-secondary shadow-sm me-2">
+                    <i class='bx bx-history'></i> Lịch sử hoạt động
+                </a>
+                <a asp-action="Create" class="btn btn-primary shadow-sm">
+                    <i class='bx bx-plus-circle'></i> Thêm phòng mới
+                </a>
+            </div>
         }
     </div>
 
@@ -106,6 +111,9 @@
                                     {
                                         <td class="text-center">
                                             <div class="btn-group" role="group">
+                                                <a asp-action="Equipments" asp-route-id="@item.RoomId" class="btn btn-sm btn-outline-info" title="Xem thiết bị">
+                                                    <i class='bx bx-devices'></i>
+                                                </a>
                                                 <a asp-action="Edit" asp-route-id="@item.RoomId" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
                                                     <i class='bx bx-edit-alt'></i>
                                                 </a>

@@ -17,13 +17,22 @@
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-header bg-danger text-white py-3">
                     <h5 class="card-title mb-0 fw-bold">
-                        <i class='bx bx-trash me-2 align-middle fs-5'></i>Đề xuất thanh lý Thiết bị
+                        <i class='bx bx-trash me-2 align-middle fs-5'></i>@(User.IsInRole("Admin") ? "Thanh lý Thiết bị" : "Đề xuất thanh lý Thiết bị")
                     </h5>
                 </div>
                 <div class="card-body p-4">
                     <div class="alert alert-warning border-0 shadow-sm mb-4">
                         <h6 class="fw-bold mb-1 text-warning-emphasis"><i class='bx bx-warning me-1.5 align-middle'></i>Lưu ý về quy trình thanh lý:</h6>
-                        <p class="mb-0 fs-7">Sau khi bạn nhấn gửi đề xuất, thiết bị này sẽ ngay lập tức được chuyển sang trạng thái <strong>Đề xuất thanh lý</strong> và một yêu cầu phê duyệt sẽ được gửi tới Ban quản lý (Admin). Bạn sẽ không thể sửa đổi thông tin hoặc luân chuyển phòng học đối với thiết bị này cho đến khi Admin đưa ra quyết định.</p>
+                        <p class="mb-0 fs-7">
+                            @if (User.IsInRole("Admin"))
+                            {
+                                @:Sau khi bạn nhấn xác nhận, thiết bị này sẽ ngay lập tức được chuyển sang trạng thái <strong>Đã thanh lý</strong>. Hành động này không thể hoàn tác và thiết bị sẽ không còn xuất hiện trong danh sách thiết bị đang sử dụng.
+                            }
+                            else
+                            {
+                                @:Sau khi bạn nhấn gửi đề xuất, thiết bị này sẽ ngay lập tức được chuyển sang trạng thái <strong>Đề xuất thanh lý</strong> và một yêu cầu phê duyệt sẽ được gửi tới Ban quản lý (Admin). Bạn sẽ không thể sửa đổi thông tin hoặc luân chuyển phòng học đối với thiết bị này cho đến khi Admin đưa ra quyết định.
+                            }
+                        </p>
                     </div>
 
                     <!-- Equipment Summary -->
@@ -58,15 +67,15 @@
 
                         <!-- Reason input -->
                         <div class="mb-3">
-                            <label asp-for="Reason" class="form-label fw-semibold text-dark">Lý do đề xuất thanh lý <span class="text-danger">*</span></label>
+                            <label asp-for="Reason" class="form-label fw-semibold text-dark">Lý do thanh lý <span class="text-danger">*</span></label>
                             <textarea asp-for="Reason" class="form-control" rows="4" placeholder="Mô tả chi tiết nguyên nhân hỏng hóc hoặc lý do thiết bị này không còn khả năng sửa chữa, bảo trì ngoài..."></textarea>
                             <span asp-validation-for="Reason" class="text-danger"></span>
-                            <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Cung cấp lý do cụ thể và rõ ràng để Admin duyệt nhanh chóng. Tối thiểu 10 ký tự.</small>
+                            <small class="text-muted d-block mt-1"><i class='bx bx-info-circle me-1'></i>Cung cấp lý do cụ thể và rõ ràng để lưu vết trên hệ thống. Tối thiểu 10 ký tự.</small>
                         </div>
 
                         <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
                             <a asp-action="Details" asp-route-id="@Model.EquipmentId" class="btn btn-light border">Hủy bỏ</a>
-                            <button type="submit" class="btn btn-danger px-4 shadow-sm">Gửi đề xuất thanh lý</button>
+                            <button type="submit" class="btn btn-danger px-4 shadow-sm">@(User.IsInRole("Admin") ? "Xác nhận thanh lý" : "Gửi đề xuất thanh lý")</button>
                         </div>
                     </form>
                 </div>

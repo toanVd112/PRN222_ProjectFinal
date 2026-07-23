@@ -46,6 +46,17 @@
                             <span asp-validation-for="FullName" class="text-danger small"></span>
                         </div>
 
+                        <div class="mb-3" id="lecturerRoomsContainer" style="display: none;">
+                            <label class="form-label">Chỉ định phòng học (Dành cho Giảng viên)</label>
+                            <select asp-for="AssignedRoomIds" class="form-select" multiple size="4">
+                                @foreach (var room in Model.AvailableRooms)
+                                {
+                                    <option value="@room.RoomId">@room.RoomCode</option>
+                                }
+                            </select>
+                            <small class="text-muted">Giữ phím Ctrl (hoặc Cmd) để chọn nhiều phòng.</small>
+                        </div>
+
                         <div class="mb-4">
                             <label asp-for="Email" class="form-label">Email (Sẽ nhận thông báo và mật khẩu) <span class="text-danger">*</span></label>
                             <input asp-for="Email" type="email" class="form-control" />
@@ -72,4 +83,23 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var roleSelect = document.getElementById('Role');
+            var roomContainer = document.getElementById('lecturerRoomsContainer');
+            
+            function toggleRooms() {
+                if (roleSelect && roleSelect.value === 'Lecturer') {
+                    roomContainer.style.display = 'block';
+                } else {
+                    roomContainer.style.display = 'none';
+                }
+            }
+            
+            if (roleSelect) {
+                roleSelect.addEventListener('change', toggleRooms);
+                toggleRooms(); // Check on load
+            }
+        });
+    </script>
 }

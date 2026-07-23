@@ -34,13 +34,17 @@
                         <th style="width: 25%">Lý do đề xuất</th>
                         <th style="width: 10%">Trạng thái</th>
                         <th style="width: 20%">Ban quản lý quyết định</th>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <th style="width: 10%" class="text-center">Hành động</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-5">
+                            <td colspan="@(User.IsInRole("Admin") ? "7" : "6")" class="text-center text-muted py-5">
                                 <i class='bx bx-archive-out fs-1 mb-2 d-block'></i>
                                 Không có yêu cầu thanh lý nào.
                             </td>
@@ -100,6 +104,47 @@
                                         <span class="text-muted fs-7 italic">Chưa phản hồi</span>
                                     }
                                 </td>
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <td class="text-center">
+                                        @if (item.Status == "Pending")
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewDisposalModal-@item.DisposalId">
+                                                Xử lý
+                                            </button>
+
+                                            <!-- Review Modal -->
+                                            <div class="modal fade text-start" id="reviewDisposalModal-@item.DisposalId" tabindex="-1" aria-labelledby="reviewDisposalModalLabel-@item.DisposalId" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <form asp-action="ReviewDisposalRequest" method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="DisposalId" value="@item.DisposalId" />
+                                                            <div class="modal-header bg-light">
+                                                                <h5 class="modal-title" id="reviewDisposalModalLabel-@item.DisposalId">Duyệt Yêu Cầu Thanh Lý</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p><strong>Thiết bị:</strong> @item.Equipment.EquipmentName (@item.Equipment.AssetCode)</p>
+                                                                <p><strong>Lý do:</strong> @item.Reason</p>
+                                                                <p><strong>Người đề xuất:</strong> @item.ProposedByNavigation.FullName</p>
+                                                                <hr />
+                                                                <div class="mb-3">
+                                                                    <label for="adminNote-@item.DisposalId" class="form-label fw-semibold">Ghi chú của Admin (Không bắt buộc)</label>
+                                                                    <textarea class="form-control" id="adminNote-@item.DisposalId" name="AdminNote" rows="2" placeholder="Nhập lời nhắn nếu từ chối hoặc phê duyệt có điều kiện..."></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer bg-light">
+                                                                <button type="submit" name="Action" value="Reject" class="btn btn-danger"><i class='bx bx-x me-1'></i>Từ chối</button>
+                                                                <button type="submit" name="Action" value="Approve" class="btn btn-success"><i class='bx bx-check me-1'></i>Phê duyệt</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </td>
+                                }
                             </tr>
                         }
                     }

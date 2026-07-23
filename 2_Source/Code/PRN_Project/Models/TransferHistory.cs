@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace PRN_Project.Models;
@@ -11,7 +11,7 @@ public partial class TransferHistory
 
     public int? FromRoomId { get; set; }
 
-    public int ToRoomId { get; set; }
+    public int? ToRoomId { get; set; }
 
     public int TransferredBy { get; set; }
 
@@ -23,7 +23,7 @@ public partial class TransferHistory
 
     public virtual Room? FromRoom { get; set; }
 
-    public virtual Room ToRoom { get; set; } = null!;
+    public virtual Room? ToRoom { get; set; }
 
     public virtual User TransferredByNavigation { get; set; } = null!;
 }

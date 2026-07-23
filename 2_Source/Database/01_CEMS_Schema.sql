@@ -116,7 +116,7 @@ CREATE TABLE TransferHistories (
     TransferID      INT             NOT NULL IDENTITY(1,1),
     EquipmentID     INT             NOT NULL,
     FromRoomID      INT             NULL,
-    ToRoomID        INT             NOT NULL,
+    ToRoomID        INT             NULL,
     TransferredBy   INT             NOT NULL,
     TransferDate    DATETIME2(0)    NOT NULL DEFAULT GETDATE(),
     Reason          NVARCHAR(500)   NULL,
@@ -281,6 +281,32 @@ CREATE TABLE DisposalRequests (
         CHECK (DecidedAt IS NULL OR DecidedAt >= ProposedAt)
 );
 
+-- 9.5. TransferRequests
+CREATE TABLE TransferRequests (
+    RequestID       INT             NOT NULL IDENTITY(1,1),
+    EquipmentID     INT             NOT NULL,
+    FromRoomID      INT             NULL,
+    ToRoomID        INT             NULL,
+    ProposedBy      INT             NOT NULL,
+    ApprovedBy      INT             NULL,
+    Reason          NVARCHAR(MAX)   NOT NULL,
+    Status          NVARCHAR(30)    NOT NULL DEFAULT 'Pending' 
+                        CONSTRAINT CHK_TransferReq_Status 
+                        CHECK (Status IN ('Pending', 'Approved', 'Rejected')),
+    ProposedAt      DATETIME2(0)    NOT NULL DEFAULT GETDATE(),
+    DecidedAt       DATETIME2(0)    NULL,
+    AdminNote       NVARCHAR(500)   NULL,
+    
+    CONSTRAINT PK_TransferRequests PRIMARY KEY (RequestID),
+    CONSTRAINT FK_TransferReq_Equipment FOREIGN KEY (EquipmentID) REFERENCES Equipments(EquipmentID) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT FK_TransferReq_FromRoom FOREIGN KEY (FromRoomID) REFERENCES Rooms(RoomID) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT FK_TransferReq_ToRoom FOREIGN KEY (ToRoomID) REFERENCES Rooms(RoomID) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT FK_TransferReq_ProposedBy FOREIGN KEY (ProposedBy) REFERENCES Users(UserID) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT FK_TransferReq_ApprovedBy FOREIGN KEY (ApprovedBy) REFERENCES Users(UserID) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT CHK_TransferReq_Rooms CHECK (FromRoomID IS NULL OR FromRoomID != ToRoomID),
+    CONSTRAINT CHK_TransferReq_DecidedAt CHECK (DecidedAt IS NULL OR DecidedAt >= ProposedAt)
+);
+
 -- 10. Notifications
 CREATE TABLE Notifications (
     NotificationID      INT             NOT NULL IDENTITY(1,1),
@@ -292,7 +318,7 @@ CREATE TABLE Notifications (
                             CHECK (Type IN (
                                 'IncidentReported', 'IncidentResolved',
                                 'PasswordReset', 'WarrantyExpiry',
-                                'DisposalProposed', 'DisposalDecided'
+                                'DisposalProposed', 'DisposalDecided', 'IncidentAssigned'
                             )),
     IsRead              BIT             NOT NULL DEFAULT 0,
     SentAt              DATETIME2(0)    NOT NULL DEFAULT GETDATE(),
@@ -324,6 +350,38 @@ CREATE TABLE PasswordResetTokens (
 
     CONSTRAINT CHK_ResetToken_Expiry
         CHECK (ExpiresAt > CreatedAt)
+);
+
+-- 12. LecturerRooms
+CREATE TABLE LecturerRooms (
+    UserID      INT             NOT NULL,
+    RoomID      INT             NOT NULL,
+    AssignedAt  DATETIME2(0)    NOT NULL DEFAULT GETDATE(),
+
+    CONSTRAINT PK_LecturerRooms PRIMARY KEY (UserID, RoomID),
+
+    CONSTRAINT FK_LecturerRooms_User
+        FOREIGN KEY (UserID) REFERENCES Users(UserID)
+        ON DELETE CASCADE ON UPDATE NO ACTION,
+
+    CONSTRAINT FK_LecturerRooms_Room
+        FOREIGN KEY (RoomID) REFERENCES Rooms(RoomID)
+        ON DELETE CASCADE ON UPDATE NO ACTION
+);
+
+-- 13. RoomStatusLogs
+CREATE TABLE RoomStatusLogs (
+    LogID           INT             NOT NULL IDENTITY(1,1),
+    RoomID          INT             NOT NULL,
+    ChangedBy       INT             NOT NULL,
+    OldStatus       BIT             NULL,
+    NewStatus       BIT             NOT NULL,
+    ChangeReason    NVARCHAR(500)   NULL,
+    ChangedAt       DATETIME2(0)    NOT NULL DEFAULT GETDATE(),
+
+    CONSTRAINT PK_RoomStatusLogs PRIMARY KEY (LogID),
+    CONSTRAINT FK_RoomStatusLog_Room FOREIGN KEY (RoomID) REFERENCES Rooms(RoomID) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT FK_RoomStatusLog_ChangedBy FOREIGN KEY (ChangedBy) REFERENCES Users(UserID) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
 GO
@@ -541,21 +599,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Ghi log khi Status thay đổi
-    IF UPDATE(Status)
-    BEGIN
-        INSERT INTO EquipmentStatusLogs (EquipmentID, ChangedBy, OldStatus, NewStatus, FieldChanged, ChangedAt)
-        SELECT
-            i.EquipmentID,
-            i.UpdatedBy,
-            d.Status,   -- OldStatus
-            i.Status,   -- NewStatus
-            'Status',
-            GETDATE()
-        FROM inserted i
-        JOIN deleted d ON i.EquipmentID = d.EquipmentID
-        WHERE i.Status != d.Status;
-    END
+    -- (Đã xóa phần tự động ghi log Status vì Code C# đã tự ghi log kèm lý do chi tiết)
 
     -- Ghi log khi WarrantyExpiry thay đổi
     IF UPDATE(WarrantyExpiry)

@@ -12,37 +12,14 @@
             <p class="text-muted mb-0">Quản lý, tìm kiếm và cập nhật trạng thái thiết bị trong hệ thống.</p>
         </div>
         <div class="col-auto">
-            <a asp-action="Create" class="btn btn-primary d-flex align-items-center shadow-sm">
-                <i class='bx bx-plus-circle fs-5 me-1.5'></i> Thêm thiết bị mới
-            </a>
+            @if (User.IsInRole("Admin"))
+            {
+                <a asp-action="Create" class="btn btn-primary d-flex align-items-center shadow-sm">
+                    <i class='bx bx-plus-circle fs-5 me-1.5'></i> Thêm thiết bị mới
+                </a>
+            }
         </div>
     </div>
-
-    <!-- Feedback messages -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 border-start border-success border-4" role="alert">
-            <i class='bx bx-check-circle me-2 fs-5 align-middle text-success'></i>
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 border-start border-danger border-4" role="alert">
-            <i class='bx bx-error-circle me-2 fs-5 align-middle text-danger'></i>
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["WarningMessage"] != null)
-    {
-        <div class="alert alert-warning alert-dismissible fade show shadow-sm border-0 border-start border-warning border-4" role="alert">
-            <i class='bx bx-error-circle me-2 fs-5 align-middle text-warning'></i>
-            @TempData["WarningMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
 
     <!-- Glassmorphic Filter Card -->
     <div class="card border-0 shadow-sm mb-4 bg-white rounded-3">
@@ -74,6 +51,7 @@
                     <label for="RoomSelect" class="form-label fw-semibold text-muted">Phòng học</label>
                     <select id="RoomSelect" name="roomId" class="form-select bg-light">
                         <option value="">-- Tất cả phòng --</option>
+                        <option value="0" selected="@(Model.RoomId == 0 ? "selected" : null)">Kho (Chưa phân bổ)</option>
                         @foreach (var room in Model.Rooms)
                         {
                             <option value="@room.Value" selected="@(Model.RoomId?.ToString() == room.Value ? "selected" : null)">@room.Text</option>

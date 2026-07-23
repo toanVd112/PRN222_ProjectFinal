@@ -24,4 +24,16 @@ namespace PRN_Project.Models
         [Display(Name = "Lý do đề xuất thanh lý")]
         public string Reason { get; set; } = null!;
     }
+
+    public class ReviewDisposalRequestViewModel
+    {
+        [Required]
+        public int DisposalId { get; set; }
+        
+        [Required]
+        public string Action { get; set; } = null!; // "Approve" or "Reject"
+        
+        [StringLength(500)]
+        public string? AdminNote { get; set; }
+    }
 }

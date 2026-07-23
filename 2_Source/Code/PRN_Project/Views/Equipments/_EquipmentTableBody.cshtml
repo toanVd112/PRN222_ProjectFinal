@@ -49,12 +49,16 @@ else
                     </a>
                     @if (item.Status != "Disposed" && item.Status != "ProposedDisposal")
                     {
-                        <a asp-action="ProposeDisposal" asp-route-id="@item.EquipmentId" class="btn btn-sm btn-outline-danger me-1" title="Đề xuất thanh lý">
+                        var btnTitle = User.IsInRole("Admin") ? "Thanh lý thiết bị" : "Đề xuất thanh lý";
+                        <a asp-action="ProposeDisposal" asp-route-id="@item.EquipmentId" class="btn btn-sm btn-outline-danger me-1" title="@btnTitle">
                             <i class='bx bx-trash'></i>
                         </a>
-                        <a asp-action="Edit" asp-route-id="@item.EquipmentId" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
-                            <i class='bx bx-edit-alt'></i>
-                        </a>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-action="Edit" asp-route-id="@item.EquipmentId" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+                                <i class='bx bx-edit-alt'></i>
+                            </a>
+                        }
                     }
                 </div>
             </td>
