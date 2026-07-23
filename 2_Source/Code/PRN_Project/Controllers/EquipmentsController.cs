@@ -23,7 +23,7 @@ namespace PRN_Project.Controllers
 
         // GET: Equipments
         [HttpGet]
-        public async Task<IActionResult> Index(string? search, int? categoryId, int? roomId, string? status)
+        public async Task<IActionResult> Index(string? search, int? categoryId, int? roomId, string? status, int page = 1)
         {
             var query = _context.Equipments
                 .Include(e => e.Category)
@@ -60,8 +60,21 @@ namespace PRN_Project.Controllers
                 query = query.Where(e => e.Status == status);
             }
 
+            int pageSize = 10;
+            int totalItems = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            if (page > totalPages && totalPages > 0) page = totalPages;
+            if (page < 1) page = 1;
+
             var equipments = await query
-                .OrderBy(e => e.AssetCode)
+                .OrderBy(e => 
+                    e.Status == "PendingRepair" ? 1 :
+                    e.Status == "ProposedDisposal" ? 2 :
+                    e.Status == "InUse" ? 3 :
+                    e.Status == "Disposed" ? 4 : 5)
+                .ThenBy(e => e.AssetCode)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(e => new EquipmentListItemViewModel
                 {
                     EquipmentId = e.EquipmentId,
@@ -87,6 +100,9 @@ namespace PRN_Project.Controllers
                 CategoryId = categoryId,
                 RoomId = roomId,
                 Status = status,
+                CurrentPage = page,
+                TotalPages = totalPages,
+                PageSize = pageSize,
                 Equipments = equipments,
                 Categories = await _context.EquipmentCategories
                     .OrderBy(c => c.CategoryName)
@@ -101,7 +117,6 @@ namespace PRN_Project.Controllers
                 {
                     new() { Value = "InUse", Text = "Đang sử dụng" },
                     new() { Value = "PendingRepair", Text = "Chờ sửa chữa" },
-                    new() { Value = "UnderMaintenance", Text = "Đang bảo trì ngoài" },
                     new() { Value = "ProposedDisposal", Text = "Đề xuất thanh lý" },
                     new() { Value = "Disposed", Text = "Đã thanh lý" }
                 }

@@ -8,6 +8,9 @@ namespace PRN_Project.Models
         public string? Search { get; set; }
         public string? Status { get; set; }
         public int? RoomId { get; set; }
+        public int CurrentPage { get; set; } = 1;
+        public int TotalPages { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
 
         public List<IncidentReport> Incidents { get; set; } = new();
 
