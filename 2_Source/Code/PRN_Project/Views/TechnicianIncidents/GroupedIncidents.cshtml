@@ -1,0 +1,113 @@
+@model PRN_Project.Models.GroupedIncidentsPageViewModel
+
+@{
+    ViewData["Title"] = "Phân công sự cố theo nhóm";
+}
+
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h2 class="mb-1 text-primary fw-bold">Phân công Sự cố theo phòng</h2>
+            <p class="text-muted mb-0">Nhóm các sự cố được báo cáo cùng lúc trong cùng một phòng học để dễ dàng phân công.</p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class='bx bx-arrow-back me-1'></i> Trở về danh sách
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.GroupedIncidents.Any())
+    {
+        <div class="alert alert-info border-0 shadow-sm">
+            <i class='bx bx-info-circle me-2'></i> Hiện tại không có sự cố nào đang chờ tiếp nhận.
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var group in Model.GroupedIncidents)
+            {
+                <div class="col-12 col-xl-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title text-primary fw-bold mb-0">
+                                    <i class='bx bx-door-open me-2'></i> Phòng @group.RoomName
+                                </h5>
+                                <span class="badge bg-warning text-dark px-3 py-2 fs-7 rounded-pill">
+                                    @group.Incidents.Count thiết bị hỏng
+                                </span>
+                            </div>
+                            <p class="text-muted fs-7 mt-2 mb-0">
+                                <i class='bx bx-time me-1'></i> Báo cáo lúc: @group.FirstReportedAt.ToString("HH:mm - dd/MM/yyyy")
+                            </p>
+                        </div>
+                        
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle">
+                                    <thead class="table-light text-muted fs-7">
+                                        <tr>
+                                            <th>Thiết bị</th>
+                                            <th>Mã tài sản</th>
+                                            <th>Mô tả lỗi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="fs-7">
+                                        @foreach (var incident in group.Incidents)
+                                        {
+                                            <tr>
+                                                <td class="fw-medium">@incident.Equipment.EquipmentName</td>
+                                                <td class="text-muted">@incident.Equipment.AssetCode</td>
+                                                <td>
+                                                    <span class="d-inline-block text-truncate" style="max-width: 150px;" title="@incident.Description">
+                                                        @incident.Description
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-light border-0 py-3">
+                            <form asp-action="AssignGroup" method="post" class="row g-2 align-items-center">
+                                @foreach (var incident in group.Incidents)
+                                {
+                                    <input type="hidden" name="incidentIds" value="@incident.IncidentId" />
+                                }
+                                
+                                <div class="col">
+                                    <select name="technicianIds" class="form-select" multiple required size="2" aria-label="Chọn Kỹ thuật viên">
+                                        @foreach (var tech in Model.AvailableTechnicians)
+                                        {
+                                            <option value="@tech.UserId">@tech.FullName</option>
+                                        }
+                                    </select>
+                                    <div class="form-text fs-8">Nhấn giữ Ctrl (hoặc Cmd) để chọn nhiều KTV. Các sự cố sẽ được chia đều.</div>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="submit" class="btn btn-primary h-100">
+                                        <i class='bx bx-user-check me-1'></i> Phân công
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <!-- Select2 or Custom styles for multi-select could be added here if needed -->
+    <style>
+        select[multiple] {
+            height: 80px;
+        }
+    </style>
+}

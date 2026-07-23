@@ -23,7 +23,7 @@ namespace PRN_Project.Controllers
 
         // GET: TechnicianIncidents
         [HttpGet]
-        public async Task<IActionResult> Index(string? search, string? status, int? roomId)
+        public async Task<IActionResult> Index(string? search, string? status, int? roomId, int page = 1)
         {
             var query = _context.IncidentReports
                 .Include(i => i.Equipment)
@@ -59,8 +59,21 @@ namespace PRN_Project.Controllers
                 query = query.Where(i => i.RoomId == roomId.Value);
             }
 
+            int pageSize = 10;
+            int totalItems = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            if (page > totalPages && totalPages > 0) page = totalPages;
+            if (page < 1) page = 1;
+
             var incidents = await query
-                .OrderBy(i => i.IncidentId)
+                .OrderBy(i =>
+                    i.Status == "Pending" ? 1 :
+                    i.Status == "InProgress" ? 2 :
+                    i.Status == "Resolved" ? 3 :
+                    i.Status == "Cancelled" ? 4 : 5)
+                .ThenByDescending(i => i.ReportedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
             // AJAX request check
@@ -74,6 +87,9 @@ namespace PRN_Project.Controllers
                 Search = search,
                 Status = status,
                 RoomId = roomId,
+                CurrentPage = page,
+                TotalPages = totalPages,
+                PageSize = pageSize,
                 Incidents = incidents,
                 Rooms = await _context.Rooms
                     .Where(r => r.IsActive)
@@ -148,7 +164,11 @@ namespace PRN_Project.Controllers
                 return RedirectToAction("Login", "Auth");
             }
 
-            var incident = await _context.IncidentReports.FindAsync(id);
+            var incident = await _context.IncidentReports
+                .Include(i => i.Room)
+                .Include(i => i.Equipment)
+                .FirstOrDefaultAsync(i => i.IncidentId == id);
+
             if (incident == null)
             {
                 TempData["ErrorMessage"] = "Không tìm thấy báo cáo sự cố.";
@@ -163,6 +183,25 @@ namespace PRN_Project.Controllers
 
             incident.Status = "InProgress";
             incident.AssignedTo = userId.Value;
+
+            // Lấy thông tin KTV để báo cho Admin
+            var technician = await _context.Users.FindAsync(userId.Value);
+            var admins = await _context.Users.Where(u => u.Role == "Admin" && u.IsActive).ToListAsync();
+            
+            foreach (var admin in admins)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    RecipientId = admin.UserId,
+                    Title = "Kỹ thuật viên tiếp nhận sự cố",
+                    Message = $"KTV {technician?.FullName ?? "vừa"} đã tiếp nhận xử lý sự cố thiết bị {incident.Equipment.AssetCode} tại phòng {incident.Room.RoomCode}.",
+                    Type = "IncidentAccepted",
+                    IsRead = false,
+                    SentAt = DateTime.Now,
+                    RelatedEntityType = "IncidentReport",
+                    RelatedEntityId = incident.IncidentId
+                });
+            }
 
             await _context.SaveChangesAsync();
 
@@ -326,6 +365,122 @@ namespace PRN_Project.Controllers
             return RedirectToAction(nameof(Details), new { id = incident.IncidentId });
         }
 
+
+        // GET: TechnicianIncidents/GroupedIncidents
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GroupedIncidents()
+        {
+            var pendingIncidents = await _context.IncidentReports
+                .Include(i => i.Equipment)
+                .Include(i => i.Room)
+                .Where(i => i.Status == "Pending")
+                .OrderBy(i => i.RoomId)
+                .ThenBy(i => i.ReportedAt)
+                .ToListAsync();
+
+            var groupedList = new List<GroupedIncidentViewModel>();
+
+            foreach (var incident in pendingIncidents)
+            {
+                var existingGroup = groupedList.FirstOrDefault(g => 
+                    g.RoomId == incident.RoomId && 
+                    (incident.ReportedAt - g.FirstReportedAt).TotalMinutes <= 5);
+
+                if (existingGroup != null)
+                {
+                    existingGroup.Incidents.Add(incident);
+                }
+                else
+                {
+                    groupedList.Add(new GroupedIncidentViewModel
+                    {
+                        RoomId = incident.RoomId,
+                        RoomName = incident.Room.Location != null 
+                            ? $"{incident.Room.RoomCode} - {incident.Room.Location}" 
+                            : incident.Room.RoomCode,
+                        FirstReportedAt = incident.ReportedAt,
+                        Incidents = new List<IncidentReport> { incident }
+                    });
+                }
+            }
+
+            // Ưu tiên nhóm có nhiều sự cố lên trước
+            groupedList = groupedList.OrderByDescending(g => g.Incidents.Count).ToList();
+
+            var availableTechnicians = await _context.Users
+                .Where(u => u.IsActive && u.Role == "Technician")
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
+
+            var model = new GroupedIncidentsPageViewModel
+            {
+                GroupedIncidents = groupedList,
+                AvailableTechnicians = availableTechnicians
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AssignGroup(List<int> incidentIds, List<int> technicianIds)
+        {
+            if (incidentIds == null || !incidentIds.Any() || technicianIds == null || !technicianIds.Any())
+            {
+                TempData["ErrorMessage"] = "Dữ liệu không hợp lệ. Vui lòng chọn ít nhất 1 sự cố và 1 kỹ thuật viên.";
+                return RedirectToAction(nameof(GroupedIncidents));
+            }
+
+            var incidents = await _context.IncidentReports
+                .Where(i => incidentIds.Contains(i.IncidentId) && i.Status == "Pending")
+                .ToListAsync();
+
+            if (!incidents.Any())
+            {
+                TempData["ErrorMessage"] = "Các sự cố này đã được phân công hoặc không còn tồn tại.";
+                return RedirectToAction(nameof(GroupedIncidents));
+            }
+
+            var validTechIds = await _context.Users
+                .Where(u => technicianIds.Contains(u.UserId) && u.IsActive && u.Role == "Technician")
+                .Select(u => u.UserId)
+                .ToListAsync();
+
+            if (!validTechIds.Any())
+            {
+                TempData["ErrorMessage"] = "Kỹ thuật viên không hợp lệ.";
+                return RedirectToAction(nameof(GroupedIncidents));
+            }
+
+            int techIndex = 0;
+            foreach (var incident in incidents)
+            {
+                var assignedTechId = validTechIds[techIndex];
+                incident.AssignedTo = assignedTechId;
+                
+                _context.Notifications.Add(new Notification
+                {
+                    RecipientId = assignedTechId,
+                    Title = "Phân công xử lý sự cố (Nhóm)",
+                    Message = $"Bạn đã được phân công xử lý sự cố INC-#{incident.IncidentId} (Nằm trong nhóm sự cố cùng phòng). Vui lòng kiểm tra và tiếp nhận yêu cầu.",
+                    Type = "IncidentAssigned",
+                    IsRead = false,
+                    SentAt = DateTime.Now,
+                    RelatedEntityType = "IncidentReport",
+                    RelatedEntityId = incident.IncidentId
+                });
+
+                // Xoay vòng kỹ thuật viên
+                techIndex = (techIndex + 1) % validTechIds.Count;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Đã phân công thành công {incidents.Count} sự cố cho {validTechIds.Count} kỹ thuật viên.";
+            return RedirectToAction(nameof(GroupedIncidents));
+        }
 
         private int? GetCurrentUserId()
         {
