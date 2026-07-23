@@ -25,6 +25,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<IncidentReport> IncidentReports { get; set; }
 
+    public virtual DbSet<LecturerRoom> LecturerRooms { get; set; }
+
     public virtual DbSet<MaintenanceTicket> MaintenanceTickets { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
@@ -33,7 +35,11 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Room> Rooms { get; set; }
 
+    public virtual DbSet<RoomStatusLog> RoomStatusLogs { get; set; }
+
     public virtual DbSet<TransferHistory> TransferHistories { get; set; }
+
+    public virtual DbSet<TransferRequest> TransferRequests { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -86,6 +92,46 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.ProposedBy)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Disposal_ProposedBy");
+        });
+
+        modelBuilder.Entity<TransferRequest>(entity =>
+        {
+            entity.HasKey(e => e.RequestId);
+            entity.Property(e => e.RequestId).HasColumnName("RequestID");
+            entity.Property(e => e.EquipmentId).HasColumnName("EquipmentID");
+            entity.Property(e => e.FromRoomId).HasColumnName("FromRoomID");
+            entity.Property(e => e.ToRoomId).HasColumnName("ToRoomID");
+            entity.Property(e => e.AdminNote).HasMaxLength(500);
+            entity.Property(e => e.DecidedAt).HasPrecision(0);
+            entity.Property(e => e.ProposedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .HasDefaultValue("Pending");
+
+            entity.HasOne(d => d.ApprovedByNavigation).WithMany()
+                .HasForeignKey(d => d.ApprovedBy)
+                .HasConstraintName("FK_TransferReq_ApprovedBy");
+
+            entity.HasOne(d => d.ProposedByNavigation).WithMany()
+                .HasForeignKey(d => d.ProposedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TransferReq_ProposedBy");
+
+            entity.HasOne(d => d.Equipment).WithMany()
+                .HasForeignKey(d => d.EquipmentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TransferReq_Equipment");
+
+            entity.HasOne(d => d.FromRoom).WithMany()
+                .HasForeignKey(d => d.FromRoomId)
+                .HasConstraintName("FK_TransferReq_FromRoom");
+
+            entity.HasOne(d => d.ToRoom).WithMany()
+                .HasForeignKey(d => d.ToRoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TransferReq_ToRoom");
         });
 
         modelBuilder.Entity<Equipment>(entity =>
@@ -332,6 +378,28 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.RoomType).HasMaxLength(50);
         });
 
+        modelBuilder.Entity<RoomStatusLog>(entity =>
+        {
+            entity.HasKey(e => e.LogId);
+
+            entity.Property(e => e.LogId).HasColumnName("LogID");
+            entity.Property(e => e.ChangeReason).HasMaxLength(500);
+            entity.Property(e => e.ChangedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.RoomId).HasColumnName("RoomID");
+
+            entity.HasOne(d => d.ChangedByNavigation).WithMany(p => p.RoomStatusLogs)
+                .HasForeignKey(d => d.ChangedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_RoomStatusLog_ChangedBy");
+
+            entity.HasOne(d => d.Room).WithMany(p => p.RoomStatusLogs)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_RoomStatusLog_Room");
+        });
+
         modelBuilder.Entity<TransferHistory>(entity =>
         {
             entity.HasKey(e => e.TransferId);
@@ -396,6 +464,27 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Role).HasMaxLength(20);
             entity.Property(e => e.UpdatedAt).HasPrecision(0);
             entity.Property(e => e.UserCode).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<LecturerRoom>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.RoomId });
+
+            entity.ToTable("LecturerRooms");
+
+            entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.RoomId).HasColumnName("RoomID");
+            entity.Property(e => e.AssignedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Room).WithMany(p => p.LecturerRooms)
+                .HasForeignKey(d => d.RoomId)
+                .HasConstraintName("FK_LecturerRooms_Room");
+
+            entity.HasOne(d => d.User).WithMany(p => p.LecturerRooms)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_LecturerRooms_User");
         });
 
         modelBuilder.Entity<VwDashboardStat>(entity =>

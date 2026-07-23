@@ -13,24 +13,6 @@
         </div>
     </div>
 
-    <!-- Feedback messages -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 border-start border-success border-4" role="alert">
-            <i class='bx bx-check-circle me-2 fs-5 align-middle text-success'></i>
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 border-start border-danger border-4" role="alert">
-            <i class='bx bx-error-circle me-2 fs-5 align-middle text-danger'></i>
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
     <!-- Glassmorphic Filter Card -->
     <div class="card border-0 shadow-sm mb-4 bg-white rounded-3">
         <div class="card-body p-4">

@@ -1,0 +1,67 @@
+@model List<PRN_Project.Models.Notification>
+
+@{
+    var unreadCount = Model.Count(n => !n.IsRead);
+}
+
+<div class="user-profile dropdown">
+    <button class="topbar-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="background: none; border: none;">
+        <i class='bx bx-bell'></i>
+        @if (unreadCount > 0)
+        {
+            <span class="badge-notification">@unreadCount</span>
+        }
+    </button>
+
+    <div class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2 p-0" style="width: 320px; max-height: 400px; overflow-y: auto;">
+        <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold">Thông báo mới</h6>
+            @if (unreadCount > 0)
+            {
+                <span class="badge bg-primary rounded-pill">@unreadCount</span>
+            }
+        </div>
+        
+        <div class="list-group list-group-flush">
+            @if (!Model.Any())
+            {
+                <div class="p-4 text-center text-muted">
+                    <i class='bx bx-bell-off fs-1 d-block mb-2'></i>
+                    <small>Không có thông báo nào.</small>
+                </div>
+            }
+            else
+            {
+                foreach (var item in Model)
+                {
+                    var bgClass = item.IsRead ? "bg-white" : "bg-light";
+                    var iconClass = "bx-info-circle text-primary";
+                    
+                    if (item.Type.Contains("Incident")) iconClass = "bx-error-circle text-danger";
+                    if (item.Type.Contains("Transfer")) iconClass = "bx-transfer text-info";
+                    if (item.Type.Contains("Disposal")) iconClass = "bx-trash text-warning";
+                    if (item.Type.Contains("Resolved") || item.Type.Contains("Approved")) iconClass = "bx-check-circle text-success";
+
+                    <a asp-controller="Notifications" asp-action="Read" asp-route-id="@item.NotificationId" class="list-group-item list-group-item-action @bgClass py-3 border-bottom">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="flex-shrink-0 mt-1">
+                                <i class='bx @iconClass fs-4'></i>
+                            </div>
+                            <div class="flex-grow-1 min-width-0">
+                                <h6 class="mb-1 fs-7 fw-semibold @(item.IsRead ? "text-dark" : "text-primary")">@item.Title</h6>
+                                <p class="mb-1 text-muted fs-7 text-wrap" style="font-size: 0.85rem;">@item.Message</p>
+                                <small class="text-muted" style="font-size: 0.75rem;"><i class='bx bx-time-five me-1'></i>@item.SentAt.ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
+                            @if (!item.IsRead)
+                            {
+                                <div class="flex-shrink-0">
+                                    <span class="badge bg-primary p-1 rounded-circle"><span class="visually-hidden">Chưa đọc</span></span>
+                                </div>
+                            }
+                        </div>
+                    </a>
+                }
+            }
+        </div>
+    </div>
+</div>

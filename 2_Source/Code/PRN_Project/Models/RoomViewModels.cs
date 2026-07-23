@@ -84,4 +84,12 @@ namespace PRN_Project.Models
         public Room Room { get; set; } = null!;
         public List<Equipment> Equipments { get; set; } = new List<Equipment>();
     }
+
+    public class RoomHistoryViewModel
+    {
+        public List<RoomStatusLog> Logs { get; set; } = new List<RoomStatusLog>();
+        public int CurrentPage { get; set; }
+        public int TotalPages { get; set; }
+        public int TotalItems { get; set; }
+    }
 }

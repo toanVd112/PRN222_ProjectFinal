@@ -1,5 +1,5 @@
 @startuml Admin
-title Admin Use Case Diagram - CEMS v1.0
+title Admin Use Case Diagram - CEMS v1.1 (Updated)
 
 left to right direction
 skinparam packageStyle rectangle
@@ -7,39 +7,79 @@ skinparam packageStyle rectangle
 actor Admin
 
 rectangle "Classroom Equipment Management System (CEMS)" {
+  ' === Authentication ===
   usecase "Log In" as UC_LogIn
   usecase "Change Password" as UC_ChangePassword
   usecase "Forgot Password" as UC_ForgotPassword
   usecase "Manage Personal Profile" as UC_ManageProfile
+
+  ' === User Management ===
   usecase "Manage User Account" as UC_ManageUser
   usecase "Create Lecturer Account" as UC_CreateLecturer
   usecase "Create Technician Account" as UC_CreateTechnician
   usecase "View User Account" as UC_ViewUser
   usecase "Update User Account" as UC_UpdateUser
-  usecase "Delete User Account" as UC_DeleteUser
+  usecase "Lock/Unlock User Account" as UC_LockUnlockUser
+
+  ' === Room & Category ===
   usecase "Manage Room" as UC_ManageRoom
   usecase "Manage Equipment Category" as UC_ManageCategory
-  usecase "View Dashboard" as UC_ViewDashboard
+
+  ' === Equipment ===
+  usecase "View Equipment List" as UC_ViewEquipment
+
+  ' === Incident Management ===
+  usecase "Assign Incident to Technician" as UC_AssignIncident
+
+  ' === Transfer Management ===
+  usecase "Review Transfer Request" as UC_ReviewTransfer
+
+  ' === Disposal ===
   usecase "Approve Equipment Disposal" as UC_ApproveDisposal
+
+  ' === Dashboard & Notifications ===
+  usecase "View Dashboard" as UC_ViewDashboard
+  usecase "View Notifications" as UC_ViewNotifications
+
+  ' === System ===
   usecase "Send Notification" as UC_SendNotification
 }
 
+' --- Admin direct relationships ---
 Admin --> UC_LogIn
 Admin --> UC_ManageProfile
 Admin --> UC_ForgotPassword
 Admin --> UC_ManageUser
 Admin --> UC_ManageRoom
 Admin --> UC_ManageCategory
-Admin --> UC_ViewDashboard
+Admin --> UC_ViewEquipment
+Admin --> UC_AssignIncident
+Admin --> UC_ReviewTransfer
 Admin --> UC_ApproveDisposal
+Admin --> UC_ViewDashboard
+Admin --> UC_ViewNotifications
 
+' --- Extend/Include: Profile ---
 UC_ChangePassword ..> UC_ManageProfile : <<extend>>
+
+' --- Extend: User Management ---
 UC_CreateLecturer ..> UC_ManageUser : <<extend>>
 UC_CreateTechnician ..> UC_ManageUser : <<extend>>
 UC_ViewUser ..> UC_ManageUser : <<extend>>
 UC_UpdateUser ..> UC_ManageUser : <<extend>>
-UC_DeleteUser ..> UC_ManageUser : <<extend>>
+UC_LockUnlockUser ..> UC_ManageUser : <<extend>>
 
+' --- Include: Notifications ---
 UC_ForgotPassword ..> UC_SendNotification : <<include>>
+UC_AssignIncident ..> UC_SendNotification : <<include>>
+note bottom of (UC_AssignIncident)
+  Automatically notify Technician
+  when assigned a new incident
+end note
+UC_ReviewTransfer ..> UC_SendNotification : <<include>>
+note bottom of (UC_ReviewTransfer)
+  Notify Technician when
+  transfer request is approved/rejected
+end note
 
 @enduml

@@ -50,6 +50,17 @@
                             </div>
                         </div>
 
+                        <div class="mb-3" id="lecturerRoomsContainer" style="display: none;">
+                            <label class="form-label">Chỉ định phòng học (Dành cho Giảng viên)</label>
+                            <select asp-for="AssignedRoomIds" class="form-select" multiple size="4">
+                                @foreach (var room in Model.AvailableRooms)
+                                {
+                                    <option value="@room.RoomId">@room.RoomCode</option>
+                                }
+                            </select>
+                            <small class="text-muted">Giữ phím Ctrl (hoặc Cmd) để chọn nhiều phòng.</small>
+                        </div>
+
                         <div class="alert alert-warning border-start-4 border-warning">
                             <i class='bx bx-shield-quarter me-2'></i> 
                             Bạn không thể thay đổi địa chỉ Email và Họ Tên người dùng.
@@ -70,4 +81,29 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var roleSelect = document.getElementById('Role');
+            var roomContainer = document.getElementById('lecturerRoomsContainer');
+            
+            function toggleRooms() {
+                if (roleSelect && roleSelect.value === 'Lecturer') {
+                    roomContainer.style.display = 'block';
+                } else {
+                    roomContainer.style.display = 'none';
+                }
+            }
+            
+            if (roleSelect) {
+                roleSelect.addEventListener('change', toggleRooms);
+                toggleRooms(); // Check on load
+            } else {
+                // Truờng hợp tài khoản sửa chính mình, select bị disabled và được đổi thành input hidden
+                var roleInput = document.querySelector('input[name="Role"]');
+                if (roleInput && roleInput.value === 'Lecturer') {
+                    roomContainer.style.display = 'block';
+                }
+            }
+        });
+    </script>
 }

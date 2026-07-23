@@ -30,6 +30,9 @@ namespace PRN_Project.Models
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng chọn Vai trò")]
         public string Role { get; set; } = null!;
+
+        public List<int> AssignedRoomIds { get; set; } = new List<int>();
+        public IEnumerable<RoomOptionViewModel> AvailableRooms { get; set; } = new List<RoomOptionViewModel>();
     }
 
     public class EditUserViewModel
@@ -46,6 +49,9 @@ namespace PRN_Project.Models
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng chọn Vai trò")]
         public string Role { get; set; } = null!;
+
+        public List<int> AssignedRoomIds { get; set; } = new List<int>();
+        public IEnumerable<RoomOptionViewModel> AvailableRooms { get; set; } = new List<RoomOptionViewModel>();
     }
 
     public class UserDetailsViewModel
@@ -58,5 +64,6 @@ namespace PRN_Project.Models
         public bool IsActive { get; set; }
         public System.DateTime CreatedAt { get; set; }
         public string? AvatarUrl { get; set; }
+        public List<string> AssignedRooms { get; set; } = new List<string>();
     }
 }

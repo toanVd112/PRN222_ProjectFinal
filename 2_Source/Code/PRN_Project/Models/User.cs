@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace PRN_Project.Models;
@@ -54,4 +54,8 @@ public partial class User
     public virtual ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
 
     public virtual ICollection<TransferHistory> TransferHistories { get; set; } = new List<TransferHistory>();
+
+    public virtual ICollection<LecturerRoom> LecturerRooms { get; set; } = new List<LecturerRoom>();
+
+    public virtual ICollection<RoomStatusLog> RoomStatusLogs { get; set; } = new List<RoomStatusLog>();
 }

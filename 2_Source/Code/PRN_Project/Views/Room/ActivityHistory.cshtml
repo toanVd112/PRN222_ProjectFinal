@@ -1,0 +1,135 @@
+@model PRN_Project.Models.RoomHistoryViewModel
+
+@{
+    ViewData["Title"] = "Lịch sử hoạt động Phòng học";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800"><i class='bx bx-history'></i> Lịch sử hoạt động Phòng học</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary shadow-sm">
+            <i class='bx bx-arrow-back'></i> Quay lại
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Danh sách lịch sử thao tác</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th style="width: 5%">#</th>
+                            <th style="width: 15%">Phòng học</th>
+                            <th style="width: 20%">Người thực hiện</th>
+                            <th style="width: 20%">Hành động</th>
+                            <th style="width: 25%">Thay đổi trạng thái</th>
+                            <th style="width: 15%">Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Logs.Any())
+                        {
+                            int index = (Model.CurrentPage - 1) * 10 + 1;
+                            foreach (var item in Model.Logs)
+                            {
+                                <tr>
+                                    <td class="text-center">@(index++)</td>
+                                    <td class="text-center fw-bold text-primary">@item.Room.RoomCode</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            @if (!string.IsNullOrEmpty(item.ChangedByNavigation.AvatarUrl))
+                                            {
+                                                <img src="@item.ChangedByNavigation.AvatarUrl" class="rounded-circle me-2 object-fit-cover" width="32" height="32" alt="Avatar">
+                                            }
+                                            else
+                                            {
+                                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                    @(string.IsNullOrEmpty(item.ChangedByNavigation.FullName) ? "U" : item.ChangedByNavigation.FullName.Substring(0, 1).ToUpper())
+                                                </div>
+                                            }
+                                            <div>
+                                                <div class="fw-semibold">@item.ChangedByNavigation.FullName</div>
+                                                <small class="text-muted">@item.ChangedByNavigation.UserCode</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.ChangeReason == "Thêm phòng mới")
+                                        {
+                                            <span class="badge bg-success"><i class='bx bx-plus'></i> @item.ChangeReason</span>
+                                        }
+                                        else if (item.ChangeReason == "Mở khóa phòng học")
+                                        {
+                                            <span class="badge bg-primary"><i class='bx bx-lock-open'></i> @item.ChangeReason</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class='bx bx-lock'></i> @item.ChangeReason</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.OldStatus == null)
+                                        {
+                                            <span class="text-muted fst-italic">Mới</span>
+                                            <i class='bx bx-right-arrow-alt mx-1 text-muted'></i>
+                                            <span class="badge bg-success-subtle text-success">Đang hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge @(item.OldStatus == true ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")">
+                                                @(item.OldStatus == true ? "Đang hoạt động" : "Tạm ngưng")
+                                            </span>
+                                            <i class='bx bx-right-arrow-alt mx-1 text-muted'></i>
+                                            <span class="badge @(item.NewStatus == true ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning")">
+                                                @(item.NewStatus == true ? "Đang hoạt động" : "Tạm ngưng")
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div>@item.ChangedAt.ToString("dd/MM/yyyy")</div>
+                                        <small class="text-muted">@item.ChangedAt.ToString("HH:mm:ss")</small>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">Chưa có lịch sử hoạt động nào.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-action="ActivityHistory" asp-route-page="@(Model.CurrentPage - 1)">
+                                <i class='bx bx-chevron-left'></i>
+                            </a>
+                        </li>
+
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-action="ActivityHistory" asp-route-page="@i">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-action="ActivityHistory" asp-route-page="@(Model.CurrentPage + 1)">
+                                <i class='bx bx-chevron-right'></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>

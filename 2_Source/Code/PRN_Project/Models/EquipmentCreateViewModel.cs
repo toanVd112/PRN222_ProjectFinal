@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace PRN_Project.Models
 {
-    public class EquipmentCreateViewModel
+    public class EquipmentCreateViewModel : IValidatableObject
     {
         [Required(ErrorMessage = "Mã tài sản (Asset Code) là bắt buộc.")]
         [StringLength(50, ErrorMessage = "Mã tài sản không được vượt quá 50 ký tự.")]
@@ -48,5 +48,13 @@ namespace PRN_Project.Models
 
         public List<SelectListItem> Categories { get; set; } = new();
         public List<SelectListItem> Rooms { get; set; } = new();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (PurchaseDate.HasValue && PurchaseDate.Value > DateOnly.FromDateTime(DateTime.Today))
+            {
+                yield return new ValidationResult("Ngày mua không được lớn hơn ngày hiện tại.", new[] { nameof(PurchaseDate) });
+            }
+        }
     }
 }

@@ -32,6 +32,12 @@ namespace PRN_Project.Controllers
                 .Include(i => i.AssignedToNavigation)
                 .AsQueryable();
 
+            var userId = GetCurrentUserId();
+            if (User.IsInRole("Technician") && !User.IsInRole("Admin") && userId.HasValue)
+            {
+                query = query.Where(i => i.AssignedTo == userId.Value);
+            }
+
             // Apply search
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -54,7 +60,7 @@ namespace PRN_Project.Controllers
             }
 
             var incidents = await query
-                .OrderByDescending(i => i.ReportedAt)
+                .OrderBy(i => i.IncidentId)
                 .ToListAsync();
 
             // AJAX request check
@@ -72,7 +78,7 @@ namespace PRN_Project.Controllers
                 Rooms = await _context.Rooms
                     .Where(r => r.IsActive)
                     .OrderBy(r => r.RoomCode)
-                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = $"{r.RoomCode} - {r.RoomName}" })
+                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = $"{r.RoomCode} - {r.Location}" })
                     .ToListAsync(),
                 Statuses = new List<SelectListItem>
                 {
@@ -103,6 +109,29 @@ namespace PRN_Project.Controllers
             {
                 TempData["ErrorMessage"] = "Không tìm thấy báo cáo sự cố.";
                 return RedirectToAction(nameof(Index));
+            }
+
+            if (User.IsInRole("Admin") && incident.Status == "Pending")
+            {
+                // Retrieve busy technicians who are currently handling an InProgress incident
+                var busyTechnicianIds = await _context.IncidentReports
+                    .Where(i => i.Status == "InProgress" && i.AssignedTo != null)
+                    .Select(i => i.AssignedTo.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                // Get available technicians
+                var availableTechnicians = await _context.Users
+                    .Where(u => u.IsActive && u.Role == "Technician" && !busyTechnicianIds.Contains(u.UserId))
+                    .OrderBy(u => u.FullName)
+                    .Select(u => new SelectListItem
+                    {
+                        Value = u.UserId.ToString(),
+                        Text = u.FullName
+                    })
+                    .ToListAsync();
+
+                ViewBag.AvailableTechnicians = availableTechnicians;
             }
 
             return View(incident);
@@ -138,6 +167,55 @@ namespace PRN_Project.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Đã tiếp nhận sự cố. Vui lòng tiến hành kiểm tra thiết bị.";
+            return RedirectToAction(nameof(Details), new { id = incident.IncidentId });
+        }
+
+        // POST: TechnicianIncidents/Assign/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Assign(int id, int technicianId)
+        {
+            var incident = await _context.IncidentReports.FindAsync(id);
+            if (incident == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy báo cáo sự cố.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (incident.Status != "Pending")
+            {
+                TempData["WarningMessage"] = "Sự cố này đã được tiếp nhận hoặc đã giải quyết, không thể phân công.";
+                return RedirectToAction(nameof(Details), new { id = incident.IncidentId });
+            }
+
+            var technician = await _context.Users.FirstOrDefaultAsync(u => u.UserId == technicianId && u.IsActive && u.Role == "Technician");
+            if (technician == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy Kỹ thuật viên hợp lệ.";
+                return RedirectToAction(nameof(Details), new { id = incident.IncidentId });
+            }
+
+            // Assign the technician, keep status Pending
+            incident.AssignedTo = technicianId;
+            await _context.SaveChangesAsync();
+
+            // Send notification
+            _context.Notifications.Add(new Notification
+            {
+                RecipientId = technicianId,
+                Title = "Phân công xử lý sự cố mới",
+                Message = $"Bạn đã được phân công xử lý sự cố INC-#{incident.IncidentId}. Vui lòng kiểm tra và tiếp nhận yêu cầu.",
+                Type = "IncidentAssigned",
+                IsRead = false,
+                SentAt = DateTime.Now,
+                RelatedEntityType = "IncidentReport",
+                RelatedEntityId = incident.IncidentId
+            });
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Đã phân công sự cố cho {technician.FullName} thành công.";
             return RedirectToAction(nameof(Details), new { id = incident.IncidentId });
         }
 
@@ -216,6 +294,23 @@ namespace PRN_Project.Controllers
                     RelatedEntityType = "IncidentReport",
                     RelatedEntityId = incident.IncidentId
                 });
+
+                // Send notification to Admins
+                var admins = await _context.Users.Where(u => u.IsActive && u.Role == "Admin").ToListAsync();
+                foreach (var admin in admins)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        RecipientId = admin.UserId,
+                        Title = "Kỹ thuật viên đã xử lý xong sự cố",
+                        Message = $"Kỹ thuật viên đã giải quyết xong sự cố cho thiết bị {incident.Equipment.AssetCode} tại phòng {incident.Room.RoomCode}.",
+                        Type = "IncidentResolved",
+                        IsRead = false,
+                        SentAt = DateTime.Now,
+                        RelatedEntityType = "IncidentReport",
+                        RelatedEntityId = incident.IncidentId
+                    });
+                }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

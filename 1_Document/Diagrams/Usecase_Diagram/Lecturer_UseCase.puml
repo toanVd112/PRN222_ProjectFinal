@@ -1,5 +1,5 @@
 @startuml Lecturer
-title Lecturer Use Case Diagram - CEMS v1.0
+title Lecturer Use Case Diagram - CEMS v1.1 (Updated)
 
 left to right direction
 skinparam packageStyle rectangle
@@ -7,28 +7,66 @@ skinparam packageStyle rectangle
 actor Lecturer
 
 rectangle "Classroom Equipment Management System (CEMS)" {
+  ' === Authentication ===
   usecase "Log In" as UC_LogIn
   usecase "Change Password" as UC_ChangePassword
   usecase "Forgot Password" as UC_ForgotPassword
   usecase "Manage Personal Profile" as UC_ManageProfile
+
+  ' === Room Equipment ===
   usecase "View Room Equipment" as UC_ViewRoomEquipment
+
+  ' === Incident Reporting ===
   usecase "Submit Incident Report" as UC_SubmitIncident
-  usecase "Track Incident Report" as UC_TrackIncident
+  usecase "Edit Incident Report" as UC_EditIncident
+  usecase "Cancel Incident Report" as UC_CancelIncident
+  usecase "Track Incident Reports" as UC_TrackIncident
+
+  ' === Dashboard & Notifications ===
+  usecase "View Dashboard" as UC_ViewDashboard
+  usecase "View Notifications" as UC_ViewNotifications
+
+  ' === System ===
   usecase "Send Notification" as UC_SendNotification
 }
 
+' --- Lecturer direct relationships ---
 Lecturer --> UC_LogIn
 Lecturer --> UC_ManageProfile
 Lecturer --> UC_ForgotPassword
 Lecturer --> UC_ViewRoomEquipment
-Lecturer --> UC_SubmitIncident
 Lecturer --> UC_TrackIncident
+Lecturer --> UC_ViewDashboard
+Lecturer --> UC_ViewNotifications
 
+' --- Extend/Include: Profile ---
 UC_ChangePassword ..> UC_ManageProfile : <<extend>>
 
+' --- Extend: Submit Incident (initiated from View Room Equipment) ---
+UC_SubmitIncident ..> UC_ViewRoomEquipment : <<extend>>
+note right of (UC_SubmitIncident)
+  Lecturer clicks "Báo hỏng" button
+  directly from room equipment list.
+  Not a standalone entry point.
+end note
+
+' --- Extend: Incident management sub-actions ---
+UC_EditIncident ..> UC_SubmitIncident : <<extend>>
+note right of (UC_EditIncident)
+  Only editable when
+  status is Pending
+end note
+
+UC_CancelIncident ..> UC_SubmitIncident : <<extend>>
+note right of (UC_CancelIncident)
+  Only cancellable when
+  status is Pending
+end note
+
+' --- Include: Notifications ---
 UC_SubmitIncident ..> UC_SendNotification : <<include>>
-note right of (UC_SendNotification)
-  Automatically notify technician
+note bottom of (UC_SendNotification)
+  Automatically notify Technician
   about new incident
 end note
 

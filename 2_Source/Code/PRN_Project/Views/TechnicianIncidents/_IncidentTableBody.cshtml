@@ -51,7 +51,25 @@ else
             </td>
             <td class="text-end">
                 <a asp-action="Details" asp-route-id="@item.IncidentId" class="btn btn-sm btn-outline-primary px-3">
-                    <i class='bx bx-wrench me-1 align-middle'></i> Xử lý
+                    @if (item.Status == "Pending")
+                    {
+                        if (User.IsInRole("Admin"))
+                        {
+                            <i class='bx bx-user-plus me-1 align-middle'></i> <span>Phân công</span>
+                        }
+                        else
+                        {
+                            <i class='bx bx-check-double me-1 align-middle'></i> <span>Tiếp nhận</span>
+                        }
+                    }
+                    else if (item.Status == "Resolved")
+                    {
+                        <i class='bx bx-info-circle me-1 align-middle'></i> <span>Chi tiết</span>
+                    }
+                    else
+                    {
+                        <i class='bx bx-wrench me-1 align-middle'></i> <span>Xử lý</span>
+                    }
                 </a>
             </td>
         </tr>

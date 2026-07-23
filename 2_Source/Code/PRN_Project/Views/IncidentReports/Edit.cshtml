@@ -1,0 +1,67 @@
+@model PRN_Project.Models.SubmitIncidentViewModel
+
+@{
+    ViewData["Title"] = "Sửa báo cáo sự cố";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-8">
+        <div class="card-premium">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-4">
+                <div>
+                    <h5 class="fw-bold mb-1">Sửa báo cáo sự cố</h5>
+                    <p class="text-secondary mb-0">Cập nhật thông tin báo cáo sự cố.</p>
+                </div>
+            </div>
+
+            <div class="border rounded-3 p-3 mb-4 bg-light">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Phòng học</div>
+                        <div class="fw-semibold">@Model.RoomDisplayName</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Mã tài sản</div>
+                        <div class="fw-semibold">@Model.AssetCode</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Thiết bị</div>
+                        <div class="fw-semibold">@Model.EquipmentName</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="text-secondary small">Loại thiết bị</div>
+                        <div class="fw-semibold">@Model.CategoryName</div>
+                    </div>
+                </div>
+            </div>
+
+            <form asp-controller="IncidentReports" asp-action="Edit" asp-route-id="@Context.Request.RouteValues["id"]" method="post">
+                <input type="hidden" asp-for="EquipmentId" />
+                <input type="hidden" asp-for="RoomId" />
+                <input type="hidden" asp-for="AssetCode" />
+                <input type="hidden" asp-for="EquipmentName" />
+                <input type="hidden" asp-for="CategoryName" />
+                <input type="hidden" asp-for="RoomDisplayName" />
+                
+                <div class="mb-4">
+                    <label asp-for="Description" class="form-label fw-medium">Mô tả sự cố <span class="text-danger">*</span></label>
+                    <textarea asp-for="Description" class="form-control" rows="4" placeholder="Ví dụ: Máy chiếu không lên nguồn, dây cáp bị đứt..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger small mt-1"></span>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a asp-action="Details" asp-route-id="@Context.Request.RouteValues["id"]" class="btn btn-outline-secondary">
+                        <i class='bx bx-x'></i> Hủy bỏ
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class='bx bx-save'></i> Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

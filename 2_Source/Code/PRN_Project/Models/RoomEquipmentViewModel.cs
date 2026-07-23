@@ -19,7 +19,9 @@ public class RoomOptionViewModel
 
     public string RoomName { get; set; } = null!;
 
-    public string DisplayName => $"{RoomCode} - {RoomName}";
+    public string DisplayName => string.Equals(RoomCode, RoomName, System.StringComparison.OrdinalIgnoreCase) 
+        ? RoomCode 
+        : $"{RoomCode} - {RoomName}";
 }
 
 public class RoomEquipmentItemViewModel

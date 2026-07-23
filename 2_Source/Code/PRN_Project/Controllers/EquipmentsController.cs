@@ -45,7 +45,14 @@ namespace PRN_Project.Controllers
 
             if (roomId.HasValue)
             {
-                query = query.Where(e => e.CurrentRoomId == roomId.Value);
+                if (roomId.Value == 0)
+                {
+                    query = query.Where(e => e.CurrentRoomId == null);
+                }
+                else
+                {
+                    query = query.Where(e => e.CurrentRoomId == roomId.Value);
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(status))
@@ -61,7 +68,7 @@ namespace PRN_Project.Controllers
                     AssetCode = e.AssetCode,
                     EquipmentName = e.EquipmentName,
                     CategoryName = e.Category.CategoryName,
-                    RoomDisplayName = e.CurrentRoom != null ? $"{e.CurrentRoom.RoomCode} - {e.CurrentRoom.RoomName}" : "Chưa gán / Lưu kho",
+                    RoomDisplayName = e.CurrentRoom != null ? e.CurrentRoom.RoomCode == e.CurrentRoom.Location ? e.CurrentRoom.RoomCode : $"{e.CurrentRoom.RoomCode} - {e.CurrentRoom.Location}" : "Chưa gán / Lưu kho",
                     Status = e.Status,
                     WarrantyExpiry = e.WarrantyExpiry
                 })
@@ -88,7 +95,7 @@ namespace PRN_Project.Controllers
                 Rooms = await _context.Rooms
                     .Where(r => r.IsActive)
                     .OrderBy(r => r.RoomCode)
-                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = $"{r.RoomCode} - {r.RoomName}" })
+                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = r.RoomCode == r.Location ? r.RoomCode : $"{r.RoomCode} - {r.Location}" })
                     .ToListAsync(),
                 Statuses = new List<SelectListItem>
                 {
@@ -132,6 +139,7 @@ namespace PRN_Project.Controllers
         }
         // GET: Equipments/Create
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create()
         {
             var model = new EquipmentCreateViewModel
@@ -145,6 +153,7 @@ namespace PRN_Project.Controllers
         // POST: Equipments/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(EquipmentCreateViewModel model)
         {
             var userId = GetCurrentUserId();
@@ -206,6 +215,21 @@ namespace PRN_Project.Controllers
                     await _context.SaveChangesAsync();
                 }
 
+                var statusLog = new EquipmentStatusLog
+                {
+                    EquipmentId = equipment.EquipmentId,
+                    ChangedBy = userId.Value,
+                    OldStatus = null,
+                    NewStatus = equipment.Status,
+                    FieldChanged = "Status",
+                    OldValue = null,
+                    NewValue = equipment.Status,
+                    ChangeReason = "Thêm mới thiết bị vào hệ thống.",
+                    ChangedAt = DateTime.Now
+                };
+                _context.EquipmentStatusLogs.Add(statusLog);
+                await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
             }
             catch (Exception)
@@ -223,6 +247,7 @@ namespace PRN_Project.Controllers
 
         // GET: Equipments/Edit/5
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)
         {
             var equipment = await _context.Equipments
@@ -264,6 +289,7 @@ namespace PRN_Project.Controllers
         // POST: Equipments/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(EquipmentEditViewModel model)
         {
             var userId = GetCurrentUserId();
@@ -481,7 +507,7 @@ namespace PRN_Project.Controllers
                 EquipmentId = equipment.EquipmentId,
                 AssetCode = equipment.AssetCode,
                 EquipmentName = equipment.EquipmentName,
-                RoomDisplayName = equipment.CurrentRoom != null ? $"{equipment.CurrentRoom.RoomCode} - {equipment.CurrentRoom.RoomName}" : "Chưa gán / Lưu kho",
+                RoomDisplayName = equipment.CurrentRoom != null ? equipment.CurrentRoom.RoomCode == equipment.CurrentRoom.Location ? equipment.CurrentRoom.RoomCode : $"{equipment.CurrentRoom.RoomCode} - {equipment.CurrentRoom.Location}" : "Chưa gán / Lưu kho",
                 Status = equipment.Status
             };
 
@@ -521,61 +547,105 @@ namespace PRN_Project.Controllers
             try
             {
                 var originalStatus = equipment.Status;
+                var isAdmin = User.IsInRole("Admin");
 
-                // Update Equipment Status
-                equipment.Status = "ProposedDisposal";
-                equipment.UpdatedBy = userId.Value;
-                equipment.UpdatedAt = DateTime.Now;
-
-                // Create Disposal Request
-                var request = new DisposalRequest
+                if (isAdmin)
                 {
-                    EquipmentId = equipment.EquipmentId,
-                    ProposedBy = userId.Value,
-                    Reason = model.Reason.Trim(),
-                    Status = "Pending",
-                    ProposedAt = DateTime.Now
-                };
+                    equipment.Status = "Disposed";
+                    equipment.CurrentRoomId = null; // Remove from room
+                    equipment.UpdatedBy = userId.Value;
+                    equipment.UpdatedAt = DateTime.Now;
 
-                _context.DisposalRequests.Add(request);
-                await _context.SaveChangesAsync(); // Generates RequestId
-
-                // Create manual status log detail if needed or let trigger handle it.
-                // The trigger trg_Equipment_AfterUpdate will log the change to 'ProposedDisposal' automatically!
-                // Wait, trigger logs: OldStatus = originalStatus, NewStatus = 'ProposedDisposal'
-
-                // Create Notifications for Admins
-                var admins = await _context.Users.Where(u => u.IsActive && u.Role == "Admin").ToListAsync();
-                var technicianName = User.Identity?.Name ?? "Kỹ thuật viên";
-                var title = "Yêu cầu phê duyệt thanh lý";
-                var message = $"{technicianName} đã đề xuất thanh lý thiết bị {equipment.AssetCode} - {equipment.EquipmentName} với lý do: {model.Reason.Trim()}";
-
-                foreach (var admin in admins)
-                {
-                    _context.Notifications.Add(new Notification
+                    _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
                     {
-                        RecipientId = admin.UserId,
-                        Title = title,
-                        Message = message,
-                        Type = "DisposalProposed",
-                        IsRead = false,
-                        SentAt = DateTime.Now,
-                        RelatedEntityType = "DisposalRequest",
-                        RelatedEntityId = request.DisposalId
+                        EquipmentId = equipment.EquipmentId,
+                        ChangedBy = userId.Value,
+                        OldStatus = originalStatus,
+                        NewStatus = "Disposed",
+                        FieldChanged = "Status",
+                        OldValue = originalStatus,
+                        NewValue = "Disposed",
+                        ChangeReason = model.Reason.Trim(),
+                        ChangedAt = DateTime.Now
                     });
+                    
+                    await _context.SaveChangesAsync();
                 }
+                else
+                {
+                    // Update Equipment Status
+                    equipment.Status = "ProposedDisposal";
+                    equipment.UpdatedBy = userId.Value;
+                    equipment.UpdatedAt = DateTime.Now;
 
-                await _context.SaveChangesAsync();
+                    // Create Disposal Request
+                    var request = new DisposalRequest
+                    {
+                        EquipmentId = equipment.EquipmentId,
+                        ProposedBy = userId.Value,
+                        Reason = model.Reason.Trim(),
+                        Status = "Pending",
+                        ProposedAt = DateTime.Now
+                    };
+
+                    _context.DisposalRequests.Add(request);
+                    
+                    _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                    {
+                        EquipmentId = equipment.EquipmentId,
+                        ChangedBy = userId.Value,
+                        OldStatus = originalStatus,
+                        NewStatus = "ProposedDisposal",
+                        FieldChanged = "Status",
+                        OldValue = originalStatus,
+                        NewValue = "ProposedDisposal",
+                        ChangeReason = model.Reason.Trim(),
+                        ChangedAt = DateTime.Now
+                    });
+
+                    await _context.SaveChangesAsync(); // Generates RequestId
+
+                    // Create Notifications for Admins
+                    var admins = await _context.Users.Where(u => u.IsActive && u.Role == "Admin").ToListAsync();
+                    var technicianName = User.Identity?.Name ?? "Kỹ thuật viên";
+                    var title = "Yêu cầu phê duyệt thanh lý";
+                    var message = $"{technicianName} đã đề xuất thanh lý thiết bị {equipment.AssetCode} - {equipment.EquipmentName} với lý do: {model.Reason.Trim()}";
+
+                    foreach (var admin in admins)
+                    {
+                        _context.Notifications.Add(new Notification
+                        {
+                            RecipientId = admin.UserId,
+                            Title = title,
+                            Message = message,
+                            Type = "DisposalProposed",
+                            IsRead = false,
+                            SentAt = DateTime.Now,
+                            RelatedEntityType = "DisposalRequest",
+                            RelatedEntityId = request.DisposalId
+                        });
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+                
                 await transaction.CommitAsync();
             }
             catch (Exception)
             {
                 await transaction.RollbackAsync();
-                ModelState.AddModelError(string.Empty, "Có lỗi xảy ra khi xử lý đề xuất. Vui lòng thử lại.");
+                ModelState.AddModelError(string.Empty, "Có lỗi xảy ra khi xử lý. Vui lòng thử lại.");
                 return View(model);
             }
 
-            TempData["SuccessMessage"] = $"Đã gửi đề xuất thanh lý thiết bị {equipment.AssetCode} cho Ban quản lý.";
+            if (User.IsInRole("Admin"))
+            {
+                TempData["SuccessMessage"] = $"Đã thanh lý thiết bị {equipment.AssetCode} thành công.";
+            }
+            else
+            {
+                TempData["SuccessMessage"] = $"Đã gửi đề xuất thanh lý thiết bị {equipment.AssetCode} cho Ban quản lý.";
+            }
             return RedirectToAction(nameof(Details), new { id = equipment.EquipmentId });
         }
 
@@ -602,8 +672,164 @@ namespace PRN_Project.Controllers
             return View(disposals);
         }
 
+        // POST: Equipments/ReviewDisposalRequest
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ReviewDisposalRequest(ReviewDisposalRequestViewModel model)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return RedirectToAction("Login", "Auth");
+
+            var request = await _context.DisposalRequests
+                .Include(r => r.Equipment)
+                .FirstOrDefaultAsync(r => r.DisposalId == model.DisposalId);
+
+            if (request == null)
+            {
+                return NotFound();
+            }
+
+            if (request.Status != "Pending")
+            {
+                TempData["ErrorMessage"] = "Yêu cầu này đã được xử lý trước đó.";
+                return RedirectToAction(nameof(Disposals));
+            }
+
+            var originalStatus = request.Equipment.Status;
+
+            if (model.Action == "Approve")
+            {
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    request.Status = "Approved";
+                    request.ApprovedBy = userId;
+                    request.DecidedAt = DateTime.Now;
+                    request.AdminNote = model.AdminNote?.Trim();
+
+                    request.Equipment.Status = "Disposed";
+                    request.Equipment.CurrentRoomId = null; // Remove from room
+                    request.Equipment.UpdatedBy = userId.Value;
+                    request.Equipment.UpdatedAt = DateTime.Now;
+
+                    _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                    {
+                        EquipmentId = request.EquipmentId,
+                        ChangedBy = userId.Value,
+                        OldStatus = originalStatus,
+                        NewStatus = "Disposed",
+                        FieldChanged = "Status",
+                        OldValue = originalStatus,
+                        NewValue = "Disposed",
+                        ChangeReason = request.Reason != null && request.Reason.Length > 450 ? request.Reason.Substring(0, 450) + "..." : request.Reason,
+                        ChangedAt = DateTime.Now
+                    });
+
+                    _context.Notifications.Add(new Notification
+                    {
+                        RecipientId = request.ProposedBy,
+                        Title = "Đề xuất thanh lý được duyệt",
+                        Message = $"Đề xuất thanh lý thiết bị {request.Equipment.AssetCode} của bạn đã được duyệt.",
+                        Type = "DisposalDecided",
+                        IsRead = false,
+                        SentAt = DateTime.Now,
+                        RelatedEntityType = "DisposalRequest",
+                        RelatedEntityId = request.DisposalId
+                    });
+
+                    // Resolve any active incidents for this equipment
+                    var activeIncidents = await _context.IncidentReports
+                        .Where(i => i.EquipmentId == request.EquipmentId && (i.Status == "Pending" || i.Status == "InProgress"))
+                        .ToListAsync();
+                    
+                    foreach (var incident in activeIncidents)
+                    {
+                        incident.Status = "Resolved";
+                        incident.ResolvedAt = DateTime.Now;
+                        incident.ResolutionNote = "Thiết bị đã được thanh lý.";
+
+                        _context.Notifications.Add(new Notification
+                        {
+                            RecipientId = incident.ReportedBy,
+                            Title = "Sự cố phòng học đã kết thúc",
+                            Message = $"Báo cáo sự cố cho thiết bị {request.Equipment.AssetCode} đã đóng do thiết bị được thanh lý.",
+                            Type = "IncidentResolved",
+                            IsRead = false,
+                            SentAt = DateTime.Now,
+                            RelatedEntityType = "IncidentReport",
+                            RelatedEntityId = incident.IncidentId
+                        });
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    TempData["SuccessMessage"] = "Đã duyệt yêu cầu thanh lý thành công.";
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["ErrorMessage"] = "Có lỗi xảy ra khi duyệt yêu cầu: " + ex.Message + (ex.InnerException != null ? " - " + ex.InnerException.Message : "");
+                }
+            }
+            else if (model.Action == "Reject")
+            {
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    request.Status = "Rejected";
+                    request.ApprovedBy = userId;
+                    request.DecidedAt = DateTime.Now;
+                    request.AdminNote = model.AdminNote?.Trim();
+
+                    request.Equipment.Status = "InUse"; // Reset back to InUse
+                    request.Equipment.UpdatedBy = userId.Value;
+                    request.Equipment.UpdatedAt = DateTime.Now;
+                    
+                    _context.EquipmentStatusLogs.Add(new EquipmentStatusLog
+                    {
+                        EquipmentId = request.EquipmentId,
+                        ChangedBy = userId.Value,
+                        OldStatus = originalStatus,
+                        NewStatus = "InUse",
+                        FieldChanged = "Status",
+                        OldValue = originalStatus,
+                        NewValue = "InUse",
+                        ChangeReason = "Từ chối đề xuất thanh lý",
+                        ChangedAt = DateTime.Now
+                    });
+
+                    _context.Notifications.Add(new Notification
+                    {
+                        RecipientId = request.ProposedBy,
+                        Title = "Đề xuất thanh lý bị từ chối",
+                        Message = $"Đề xuất thanh lý thiết bị {request.Equipment.AssetCode} của bạn đã bị từ chối.",
+                        Type = "DisposalDecided",
+                        IsRead = false,
+                        SentAt = DateTime.Now,
+                        RelatedEntityType = "DisposalRequest",
+                        RelatedEntityId = request.DisposalId
+                    });
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    TempData["ErrorMessage"] = "Đã từ chối yêu cầu thanh lý.";
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["ErrorMessage"] = "Có lỗi xảy ra khi từ chối yêu cầu.";
+                }
+            }
+
+            return RedirectToAction(nameof(Disposals));
+        }
+
         // GET: Equipments/Transfers
         [HttpGet]
+        [Authorize(Roles = "Technician")]
         public async Task<IActionResult> Transfers(string? search, int? categoryId, int? roomId)
         {
             var query = _context.Equipments
@@ -636,7 +862,7 @@ namespace PRN_Project.Controllers
                     AssetCode = e.AssetCode,
                     EquipmentName = e.EquipmentName,
                     CategoryName = e.Category.CategoryName,
-                    RoomDisplayName = e.CurrentRoom != null ? $"{e.CurrentRoom.RoomCode} - {e.CurrentRoom.RoomName}" : "Chưa gán / Lưu kho",
+                    RoomDisplayName = e.CurrentRoom != null ? e.CurrentRoom.RoomCode == e.CurrentRoom.Location ? e.CurrentRoom.RoomCode : $"{e.CurrentRoom.RoomCode} - {e.CurrentRoom.Location}" : "Chưa gán / Lưu kho",
                     Status = e.Status,
                     WarrantyExpiry = e.WarrantyExpiry
                 })
@@ -660,13 +886,13 @@ namespace PRN_Project.Controllers
             return View(model);
         }
 
-        // GET: Equipments/Transfer/5
+        // GET: Equipments/ProposeTransfer/5
         [HttpGet]
-        public async Task<IActionResult> Transfer(int id)
+        [Authorize(Roles = "Technician")]
+        public async Task<IActionResult> ProposeTransfer(int id)
         {
             var equipment = await _context.Equipments
                 .Include(e => e.CurrentRoom)
-
                 .FirstOrDefaultAsync(e => e.EquipmentId == id && e.IsActive);
 
             if (equipment == null)
@@ -687,27 +913,35 @@ namespace PRN_Project.Controllers
                 return RedirectToAction(nameof(Transfers));
             }
 
-            var model = new EquipmentTransferViewModel
+            var roomsList = await _context.Rooms
+                .Where(r => r.IsActive && r.RoomId != equipment.CurrentRoomId)
+                .OrderBy(r => r.RoomCode)
+                .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = r.RoomCode == r.Location ? r.RoomCode : $"{r.RoomCode} - {r.Location}" })
+                .ToListAsync();
+            
+            if (equipment.CurrentRoomId != null)
+            {
+                roomsList.Insert(0, new SelectListItem { Value = "", Text = "Kho / Chờ xử lý (Không chọn phòng đích)" });
+            }
+            
+            var model = new ProposeTransferViewModel
             {
                 EquipmentId = equipment.EquipmentId,
                 AssetCode = equipment.AssetCode,
                 EquipmentName = equipment.EquipmentName,
                 CurrentRoomId = equipment.CurrentRoomId,
-                CurrentRoomDisplayName = equipment.CurrentRoom != null ? $"{equipment.CurrentRoom.RoomCode} - {equipment.CurrentRoom.RoomName}" : "Chưa gán / Lưu kho",
-                Rooms = await _context.Rooms
-                    .Where(r => r.IsActive && r.RoomId != equipment.CurrentRoomId)
-                    .OrderBy(r => r.RoomCode)
-                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = $"{r.RoomCode} - {r.RoomName}" })
-                    .ToListAsync()
+                CurrentRoomDisplayName = equipment.CurrentRoom != null ? equipment.CurrentRoom.RoomCode == equipment.CurrentRoom.Location ? equipment.CurrentRoom.RoomCode : $"{equipment.CurrentRoom.RoomCode} - {equipment.CurrentRoom.Location}" : "Chưa gán / Lưu kho",
+                Rooms = roomsList
             };
 
             return View(model);
         }
 
-        // POST: Equipments/Transfer/5
+        // POST: Equipments/ProposeTransfer/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Transfer(EquipmentTransferViewModel model)
+        [Authorize(Roles = "Technician")]
+        public async Task<IActionResult> ProposeTransfer(ProposeTransferViewModel model)
         {
             var userId = GetCurrentUserId();
             if (userId == null)
@@ -717,11 +951,18 @@ namespace PRN_Project.Controllers
 
             if (!ModelState.IsValid)
             {
-                model.Rooms = await _context.Rooms
+                var roomsList = await _context.Rooms
                     .Where(r => r.IsActive && r.RoomId != model.CurrentRoomId)
                     .OrderBy(r => r.RoomCode)
-                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = $"{r.RoomCode} - {r.RoomName}" })
+                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = r.RoomCode == r.Location ? r.RoomCode : $"{r.RoomCode} - {r.Location}" })
                     .ToListAsync();
+
+                if (model.CurrentRoomId != null)
+                {
+                    roomsList.Insert(0, new SelectListItem { Value = "", Text = "Kho / Chờ xử lý (Không chọn phòng đích)" });
+                }
+                
+                model.Rooms = roomsList;
                 return View(model);
             }
 
@@ -741,36 +982,59 @@ namespace PRN_Project.Controllers
             if (equipment.CurrentRoomId == model.ToRoomId)
             {
                 ModelState.AddModelError(nameof(model.ToRoomId), "Phòng đích không được trùng với phòng học hiện tại.");
-                model.Rooms = await _context.Rooms
+                var roomsList = await _context.Rooms
                     .Where(r => r.IsActive && r.RoomId != model.CurrentRoomId)
                     .OrderBy(r => r.RoomCode)
-                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = $"{r.RoomCode} - {r.RoomName}" })
+                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = r.RoomCode == r.Location ? r.RoomCode : $"{r.RoomCode} - {r.Location}" })
                     .ToListAsync();
+
+                if (model.CurrentRoomId != null)
+                {
+                    roomsList.Insert(0, new SelectListItem { Value = "", Text = "Kho / Chờ xử lý (Không chọn phòng đích)" });
+                }
+                
+                model.Rooms = roomsList;
                 return View(model);
             }
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var oldRoomId = equipment.CurrentRoomId;
-
-                // Update Room ID
-                equipment.CurrentRoomId = model.ToRoomId;
-                equipment.UpdatedBy = userId.Value;
-                equipment.UpdatedAt = DateTime.Now;
-
-                // Create Transfer History
-                var transfer = new TransferHistory
+                var request = new TransferRequest
                 {
                     EquipmentId = equipment.EquipmentId,
-                    FromRoomId = oldRoomId,
+                    FromRoomId = equipment.CurrentRoomId,
                     ToRoomId = model.ToRoomId,
-                    TransferredBy = userId.Value,
-                    TransferDate = DateTime.Now,
-                    Reason = model.Reason.Trim()
+                    ProposedBy = userId.Value,
+                    Reason = model.Reason.Trim(),
+                    Status = "Pending",
+                    ProposedAt = DateTime.Now
                 };
 
-                _context.TransferHistories.Add(transfer);
+                _context.TransferRequests.Add(request);
+                await _context.SaveChangesAsync();
+
+                // Create Notifications for Admins
+                var admins = await _context.Users.Where(u => u.IsActive && u.Role == "Admin").ToListAsync();
+                var technicianName = User.Identity?.Name ?? "Kỹ thuật viên";
+                var title = "Yêu cầu luân chuyển thiết bị mới";
+                var message = $"{technicianName} đã đề xuất luân chuyển thiết bị {equipment.AssetCode} sang phòng khác.";
+
+                foreach (var admin in admins)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        RecipientId = admin.UserId,
+                        Title = title,
+                        Message = message,
+                        Type = "TransferProposed",
+                        IsRead = false,
+                        SentAt = DateTime.Now,
+                        RelatedEntityType = "TransferRequest",
+                        RelatedEntityId = request.RequestId
+                    });
+                }
+                
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -781,13 +1045,161 @@ namespace PRN_Project.Controllers
                 model.Rooms = await _context.Rooms
                     .Where(r => r.IsActive && r.RoomId != model.CurrentRoomId)
                     .OrderBy(r => r.RoomCode)
-                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = $"{r.RoomCode} - {r.RoomName}" })
+                    .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = r.RoomCode == r.Location ? r.RoomCode : $"{r.RoomCode} - {r.Location}" })
                     .ToListAsync();
                 return View(model);
             }
 
-            TempData["SuccessMessage"] = $"Điều chuyển thiết bị {equipment.AssetCode} thành công.";
+            TempData["SuccessMessage"] = $"Đã gửi đề xuất luân chuyển thiết bị {equipment.AssetCode} thành công. Vui lòng chờ phê duyệt.";
             return RedirectToAction(nameof(Transfers));
+        }
+
+        // GET: Equipments/TransferRequests
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> TransferRequests(string? status)
+        {
+            var query = _context.TransferRequests
+                .Include(r => r.Equipment)
+                .Include(r => r.FromRoom)
+                .Include(r => r.ToRoom)
+                .Include(r => r.ProposedByNavigation)
+                .Include(r => r.ApprovedByNavigation)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(r => r.Status == status);
+            }
+
+            var requests = await query
+                .OrderByDescending(r => r.ProposedAt)
+                .Select(r => new TransferRequestListItemViewModel
+                {
+                    RequestId = r.RequestId,
+                    EquipmentId = r.EquipmentId,
+                    AssetCode = r.Equipment.AssetCode,
+                    EquipmentName = r.Equipment.EquipmentName,
+                    FromRoomDisplayName = r.FromRoom != null ? r.FromRoom.RoomCode == r.FromRoom.Location ? r.FromRoom.RoomCode : $"{r.FromRoom.RoomCode} - {r.FromRoom.Location}" : "Chưa gán / Lưu kho",
+                    ToRoomDisplayName = r.ToRoom != null ? r.ToRoom.RoomCode == r.ToRoom.Location ? r.ToRoom.RoomCode : $"{r.ToRoom.RoomCode} - {r.ToRoom.Location}" : "Kho / Chờ xử lý",
+                    ProposedBy = r.ProposedByNavigation.FullName,
+                    ProposedAt = r.ProposedAt,
+                    Reason = r.Reason,
+                    Status = r.Status,
+                    AdminNote = r.AdminNote,
+                    DecidedAt = r.DecidedAt,
+                    ApprovedBy = r.ApprovedByNavigation != null ? r.ApprovedByNavigation.FullName : null
+                })
+                .ToListAsync();
+
+            var model = new TransferRequestListViewModel
+            {
+                Requests = requests,
+                StatusFilter = status
+            };
+
+            return View(model);
+        }
+
+        // POST: Equipments/ReviewTransferRequest
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ReviewTransferRequest(ReviewTransferRequestViewModel model)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return RedirectToAction("Login", "Auth");
+
+            var request = await _context.TransferRequests
+                .Include(r => r.Equipment)
+                .FirstOrDefaultAsync(r => r.RequestId == model.RequestId);
+
+            if (request == null || request.Status != "Pending")
+            {
+                TempData["ErrorMessage"] = "Yêu cầu không tồn tại hoặc đã được xử lý.";
+                return RedirectToAction(nameof(TransferRequests));
+            }
+
+            if (model.Action == "Approve")
+            {
+                if (request.Equipment.Status == "Disposed" || request.Equipment.Status == "ProposedDisposal")
+                {
+                    TempData["ErrorMessage"] = "Không thể duyệt vì thiết bị đang chờ thanh lý hoặc đã bị thanh lý.";
+                    return RedirectToAction(nameof(TransferRequests));
+                }
+
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    request.Status = "Approved";
+                    request.ApprovedBy = userId;
+                    request.DecidedAt = DateTime.Now;
+                    request.AdminNote = model.AdminNote?.Trim();
+
+                    var oldRoomId = request.Equipment.CurrentRoomId;
+                    request.Equipment.CurrentRoomId = request.ToRoomId;
+                    request.Equipment.UpdatedBy = userId.Value;
+                    request.Equipment.UpdatedAt = DateTime.Now;
+
+                    var transfer = new TransferHistory
+                    {
+                        EquipmentId = request.EquipmentId,
+                        FromRoomId = oldRoomId,
+                        ToRoomId = request.ToRoomId,
+                        TransferredBy = userId.Value,
+                        TransferDate = DateTime.Now,
+                        Reason = request.Reason
+                    };
+
+                    _context.TransferHistories.Add(transfer);
+                    
+                    _context.Notifications.Add(new Notification
+                    {
+                        RecipientId = request.ProposedBy,
+                        Title = "Đề xuất luân chuyển được duyệt",
+                        Message = $"Đề xuất luân chuyển thiết bị {request.Equipment.AssetCode} của bạn đã được duyệt.",
+                        Type = "TransferApproved",
+                        IsRead = false,
+                        SentAt = DateTime.Now,
+                        RelatedEntityType = "TransferRequest",
+                        RelatedEntityId = request.RequestId
+                    });
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    TempData["SuccessMessage"] = "Đã duyệt yêu cầu luân chuyển thành công.";
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["ErrorMessage"] = "Có lỗi xảy ra khi duyệt yêu cầu.";
+                }
+            }
+            else if (model.Action == "Reject")
+            {
+                request.Status = "Rejected";
+                request.ApprovedBy = userId;
+                request.DecidedAt = DateTime.Now;
+                request.AdminNote = model.AdminNote?.Trim();
+                
+                _context.Notifications.Add(new Notification
+                {
+                    RecipientId = request.ProposedBy,
+                    Title = "Đề xuất luân chuyển bị từ chối",
+                    Message = $"Đề xuất luân chuyển thiết bị {request.Equipment.AssetCode} của bạn đã bị từ chối.",
+                    Type = "TransferRejected",
+                    IsRead = false,
+                    SentAt = DateTime.Now,
+                    RelatedEntityType = "TransferRequest",
+                    RelatedEntityId = request.RequestId
+                });
+
+                await _context.SaveChangesAsync();
+                TempData["ErrorMessage"] = "Đã từ chối yêu cầu luân chuyển.";
+            }
+
+            return RedirectToAction(nameof(TransferRequests));
         }
 
         private async Task<List<SelectListItem>> GetCategorySelectList()
@@ -803,7 +1215,7 @@ namespace PRN_Project.Controllers
             return await _context.Rooms
                 .Where(r => r.IsActive)
                 .OrderBy(r => r.RoomCode)
-                .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = $"{r.RoomCode} - {r.RoomName}" })
+                .Select(r => new SelectListItem { Value = r.RoomId.ToString(), Text = $"{r.RoomCode} - {r.Location}" })
                 .ToListAsync();
         }
 

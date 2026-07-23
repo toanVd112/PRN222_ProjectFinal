@@ -1,5 +1,5 @@
 @startuml Technician
-title Technician Use Case Diagram - CEMS v1.0
+title Technician Use Case Diagram - CEMS v1.1 (Updated)
 
 left to right direction
 skinparam packageStyle rectangle
@@ -7,44 +7,83 @@ skinparam packageStyle rectangle
 actor Technician
 
 rectangle "Classroom Equipment Management System (CEMS)" {
+  ' === Authentication ===
   usecase "Log In" as UC_LogIn
   usecase "Change Password" as UC_ChangePassword
   usecase "Forgot Password" as UC_ForgotPassword
   usecase "Manage Personal Profile" as UC_ManageProfile
+
+  ' === Equipment Management ===
   usecase "Add/Update Equipment" as UC_ManageEquipment
-  usecase "Propose Equipment Disposal" as UC_ProposeDisposal
-  usecase "Manage Equipment Location" as UC_ManageLocation
-  usecase "Process Incident Report" as UC_ProcessIncident
-  usecase "Create Maintenance Ticket" as UC_CreateTicket
   usecase "View Equipment History" as UC_ViewHistory
-  usecase "Export Equipment Report" as UC_ExportReport
+
+  ' === Transfer ===
+  usecase "Propose Transfer Request" as UC_ProposeTransfer
+  note right of (UC_ProposeTransfer)
+    Transfer to another room
+    OR return to Storage/Warehouse.
+    Admin must approve.
+  end note
+
+  ' === Disposal ===
+  usecase "Propose Equipment Disposal" as UC_ProposeDisposal
+
+  ' === Incident Handling ===
+  usecase "View Assigned Incidents" as UC_ViewIncidents
+  usecase "Process Incident Report" as UC_ProcessIncident
+  usecase "Accept Incident" as UC_AcceptIncident
+  usecase "Resolve Incident" as UC_ResolveIncident
+  usecase "Create Maintenance Ticket" as UC_CreateTicket
+
+  ' === Dashboard & Notifications ===
+  usecase "View Dashboard" as UC_ViewDashboard
+  usecase "View Notifications" as UC_ViewNotifications
+
+  ' === System ===
   usecase "Send Notification" as UC_SendNotification
 }
 
+' --- Technician direct relationships ---
 Technician --> UC_LogIn
 Technician --> UC_ManageProfile
 Technician --> UC_ForgotPassword
 Technician --> UC_ManageEquipment
 Technician --> UC_ProposeDisposal
-Technician --> UC_ManageLocation
+Technician --> UC_ProposeTransfer
+Technician --> UC_ViewIncidents
 Technician --> UC_ProcessIncident
 Technician --> UC_ViewHistory
-Technician --> UC_ExportReport
+Technician --> UC_ViewDashboard
+Technician --> UC_ViewNotifications
 
+' --- Extend/Include: Profile ---
 UC_ChangePassword ..> UC_ManageProfile : <<extend>>
 
+' --- Include/Extend: Notifications ---
+UC_ForgotPassword ..> UC_SendNotification : <<include>>
 UC_ProcessIncident ..> UC_SendNotification : <<include>>
 note right of (UC_SendNotification)
-  Automatically notify lecturer
+  Automatically notify Lecturer
   when incident is resolved
 end note
 
-UC_CreateTicket .> UC_ProcessIncident : <<extend>>
-note right of (UC_CreateTicket)
-  Condition: Equipment
-  requires repair/maintenance
+' --- Extend: Incident sub-steps ---
+UC_AcceptIncident ..> UC_ProcessIncident : <<extend>>
+note right of (UC_AcceptIncident)
+  Step 1: Technician accepts
+  incident → Status: InProgress
 end note
 
-UC_ForgotPassword ..> UC_SendNotification : <<include>>
+UC_ResolveIncident ..> UC_ProcessIncident : <<extend>>
+note right of (UC_ResolveIncident)
+  Step 2: Technician resolves
+  incident → Status: Resolved
+end note
+
+UC_CreateTicket ..> UC_ProcessIncident : <<extend>>
+note right of (UC_CreateTicket)
+  Condition: Equipment
+  requires external repair/maintenance
+end note
 
 @enduml

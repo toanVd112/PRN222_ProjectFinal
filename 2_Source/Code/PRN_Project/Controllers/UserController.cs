@@ -72,7 +72,10 @@ namespace PRN_Project.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users
+                .Include(u => u.LecturerRooms)
+                .ThenInclude(lr => lr.Room)
+                .FirstOrDefaultAsync(u => u.UserId == id);
             if (user == null)
             {
                 return NotFound();
@@ -87,16 +90,21 @@ namespace PRN_Project.Controllers
                 Role = user.Role,
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
-                AvatarUrl = user.AvatarUrl
+                AvatarUrl = user.AvatarUrl,
+                AssignedRooms = user.Role == "Lecturer" ? user.LecturerRooms.Select(lr => lr.Room.RoomCode).ToList() : new List<string>()
             };
 
             return View(model);
         }
 
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View();
+            var model = new CreateUserViewModel
+            {
+                AvailableRooms = await GetAvailableRoomsAsync()
+            };
+            return View(model);
         }
 
         [HttpPost]
@@ -115,11 +123,13 @@ namespace PRN_Project.Controllers
                 if (model.Role == "Lecturer" && !System.Text.RegularExpressions.Regex.IsMatch(model.UserCode, @"^LEC\d+$"))
                 {
                     ModelState.AddModelError("UserCode", "Mã Giảng viên phải bắt đầu bằng 'LEC' và theo sau là các chữ số (Ví dụ: LEC01).");
+                    model.AvailableRooms = await GetAvailableRoomsAsync();
                     return View(model);
                 }
                 else if (model.Role == "Technician" && !System.Text.RegularExpressions.Regex.IsMatch(model.UserCode, @"^TECH\d+$"))
                 {
                     ModelState.AddModelError("UserCode", "Mã Nhân viên phải bắt đầu bằng 'TECH' và theo sau là các chữ số (Ví dụ: TECH01).");
+                    model.AvailableRooms = await GetAvailableRoomsAsync();
                     return View(model);
                 }
 
@@ -127,12 +137,14 @@ namespace PRN_Project.Controllers
                 if (await _context.Users.AnyAsync(u => u.Email == model.Email))
                 {
                     ModelState.AddModelError("Email", "Email này đã được sử dụng.");
+                    model.AvailableRooms = await GetAvailableRoomsAsync();
                     return View(model);
                 }
 
                 if (await _context.Users.AnyAsync(u => u.UserCode == model.UserCode))
                 {
                     ModelState.AddModelError("UserCode", "Mã người dùng này đã tồn tại.");
+                    model.AvailableRooms = await GetAvailableRoomsAsync();
                     return View(model);
                 }
 
@@ -149,6 +161,20 @@ namespace PRN_Project.Controllers
 
                 _context.Users.Add(newUser);
                 await _context.SaveChangesAsync();
+
+                if (model.Role == "Lecturer" && model.AssignedRoomIds != null && model.AssignedRoomIds.Any())
+                {
+                    foreach (var roomId in model.AssignedRoomIds)
+                    {
+                        _context.LecturerRooms.Add(new LecturerRoom
+                        {
+                            UserId = newUser.UserId,
+                            RoomId = roomId,
+                            AssignedAt = System.DateTime.Now
+                        });
+                    }
+                    await _context.SaveChangesAsync();
+                }
 
                 // Gửi email thông báo
                 string subject = "Tài khoản CEMS của bạn đã được tạo";
@@ -171,12 +197,15 @@ namespace PRN_Project.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            model.AvailableRooms = await GetAvailableRoomsAsync();
             return View(model);
         }
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users
+                .Include(u => u.LecturerRooms)
+                .FirstOrDefaultAsync(u => u.UserId == id);
             if (user == null)
             {
                 return NotFound();
@@ -188,7 +217,9 @@ namespace PRN_Project.Controllers
                 UserCode = user.UserCode,
                 FullName = user.FullName,
                 Email = user.Email,
-                Role = user.Role
+                Role = user.Role,
+                AssignedRoomIds = user.LecturerRooms.Select(lr => lr.RoomId).ToList(),
+                AvailableRooms = await GetAvailableRoomsAsync()
             };
 
             return View(model);
@@ -205,7 +236,7 @@ namespace PRN_Project.Controllers
 
             if (ModelState.IsValid)
             {
-                var user = await _context.Users.FindAsync(id);
+                var user = await _context.Users.Include(u => u.LecturerRooms).FirstOrDefaultAsync(u => u.UserId == id);
                 if (user == null)
                 {
                     return NotFound();
@@ -221,11 +252,13 @@ namespace PRN_Project.Controllers
                 if (model.Role == "Lecturer" && !System.Text.RegularExpressions.Regex.IsMatch(model.UserCode, @"^LEC\d+$"))
                 {
                     ModelState.AddModelError("UserCode", "Mã Giảng viên phải bắt đầu bằng 'LEC' và theo sau là các chữ số (Ví dụ: LEC01).");
+                    model.AvailableRooms = await GetAvailableRoomsAsync();
                     return View(model);
                 }
                 else if (model.Role == "Technician" && !System.Text.RegularExpressions.Regex.IsMatch(model.UserCode, @"^TECH\d+$"))
                 {
                     ModelState.AddModelError("UserCode", "Mã Nhân viên phải bắt đầu bằng 'TECH' và theo sau là các chữ số (Ví dụ: TECH01).");
+                    model.AvailableRooms = await GetAvailableRoomsAsync();
                     return View(model);
                 }
 
@@ -233,6 +266,7 @@ namespace PRN_Project.Controllers
                 if (user.UserCode != model.UserCode && await _context.Users.AnyAsync(u => u.UserCode == model.UserCode))
                 {
                     ModelState.AddModelError("UserCode", "Mã người dùng này đã tồn tại.");
+                    model.AvailableRooms = await GetAvailableRoomsAsync();
                     return View(model);
                 }
 
@@ -252,6 +286,30 @@ namespace PRN_Project.Controllers
                 user.Role = model.Role;
                 user.UpdatedAt = System.DateTime.Now;
 
+                if (model.Role == "Lecturer")
+                {
+                    var existingRoomIds = user.LecturerRooms.Select(lr => lr.RoomId).ToList();
+                    var newRoomIds = model.AssignedRoomIds ?? new List<int>();
+
+                    var toRemove = user.LecturerRooms.Where(lr => !newRoomIds.Contains(lr.RoomId)).ToList();
+                    var toAdd = newRoomIds.Where(id => !existingRoomIds.Contains(id)).ToList();
+
+                    _context.LecturerRooms.RemoveRange(toRemove);
+                    foreach (var roomId in toAdd)
+                    {
+                        _context.LecturerRooms.Add(new LecturerRoom
+                        {
+                            UserId = user.UserId,
+                            RoomId = roomId,
+                            AssignedAt = System.DateTime.Now
+                        });
+                    }
+                }
+                else
+                {
+                    _context.LecturerRooms.RemoveRange(user.LecturerRooms);
+                }
+
                 _context.Update(user);
                 await _context.SaveChangesAsync();
 
@@ -259,6 +317,7 @@ namespace PRN_Project.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            model.AvailableRooms = await GetAvailableRoomsAsync();
             return View(model);
         }
 
@@ -288,6 +347,20 @@ namespace PRN_Project.Controllers
 
             TempData["SuccessMessage"] = user.IsActive ? "Đã mở khóa tài khoản." : "Đã khóa tài khoản.";
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<IEnumerable<RoomOptionViewModel>> GetAvailableRoomsAsync()
+        {
+            return await _context.Rooms
+                .AsNoTracking()
+                .Where(r => r.IsActive)
+                .OrderBy(r => r.RoomCode)
+                .Select(r => new RoomOptionViewModel
+                {
+                    RoomId = r.RoomId,
+                    RoomCode = r.RoomCode,
+                    RoomName = r.RoomName
+                }).ToListAsync();
         }
     }
 }

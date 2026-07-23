@@ -12,32 +12,6 @@
         </a>
     </div>
 
-    <!-- Feedback messages -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 border-start border-success border-4 mb-4" role="alert">
-            <i class='bx bx-check-circle me-2 fs-5 align-middle text-success'></i>
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 border-start border-danger border-4 mb-4" role="alert">
-            <i class='bx bx-error-circle me-2 fs-5 align-middle text-danger'></i>
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["WarningMessage"] != null)
-    {
-        <div class="alert alert-warning alert-dismissible fade show shadow-sm border-0 border-start border-warning border-4 mb-4" role="alert">
-            <i class='bx bx-error-circle me-2 fs-5 align-middle text-warning'></i>
-            @TempData["WarningMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
     <!-- Main Grid -->
     <div class="row g-4">
         <!-- Incident Info & Equipment Spec -->
@@ -141,23 +115,62 @@
             <!-- Contextual action forms based on incident state -->
             @if (Model.Status == "Pending")
             {
-                <div class="card border-0 shadow-sm rounded-3 bg-white h-100">
-                    <div class="card-header bg-primary text-white py-3">
-                        <h5 class="card-title mb-0 fw-bold"><i class='bx bx-check-double me-2 align-middle fs-5'></i>Tiếp nhận sự cố</h5>
+                if (User.IsInRole("Admin"))
+                {
+                    var availableTechs = ViewBag.AvailableTechnicians as List<SelectListItem>;
+                    <div class="card border-0 shadow-sm rounded-3 bg-white h-100">
+                        <div class="card-header bg-primary text-white py-3">
+                            <h5 class="card-title mb-0 fw-bold"><i class='bx bx-user-plus me-2 align-middle fs-5'></i>Phân công Kỹ thuật viên</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <p class="text-muted fs-7 mb-4">Vui lòng chọn một Kỹ thuật viên đang sẵn sàng (không có sự cố nào đang xử lý) để phân công sự cố này.</p>
+                            
+                            <form asp-action="Assign" asp-route-id="@Model.IncidentId" method="post">
+                                @Html.AntiForgeryToken()
+                                <div class="mb-3">
+                                    <label for="technicianId" class="form-label fw-semibold text-dark">Kỹ thuật viên sẵn sàng</label>
+                                    <select name="technicianId" id="technicianId" class="form-select bg-light" required>
+                                        <option value="">-- Chọn kỹ thuật viên --</option>
+                                        @if (availableTechs != null)
+                                        {
+                                            foreach (var tech in availableTechs)
+                                            {
+                                                <option value="@tech.Value">@tech.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                    @if (availableTechs == null || !availableTechs.Any())
+                                    {
+                                        <small class="text-danger d-block mt-2"><i class='bx bx-error-circle me-1'></i>Hiện tại không có Kỹ thuật viên nào rảnh. Bạn có thể phải đợi hoặc phân công sau.</small>
+                                    }
+                                </div>
+                                <button type="submit" class="btn btn-primary px-4 shadow-sm w-100" @(availableTechs == null || !availableTechs.Any() ? "disabled" : "")>
+                                    <i class='bx bx-send me-1 align-middle fs-5'></i> Phân công
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                    <div class="card-body p-4 d-flex flex-column justify-content-center text-center">
-                        <i class='bx bx-time-five fs-1 text-warning mb-3'></i>
-                        <h6 class="fw-bold">Báo cáo sự cố đang ở trạng thái Chờ tiếp nhận</h6>
-                        <p class="text-muted fs-7 max-width-400 mx-auto mb-4">Để xử lý sự cố này, trước tiên bạn cần Tiếp nhận yêu cầu. Trạng thái của sự cố sẽ chuyển sang **Đang sửa chữa (InProgress)** và bạn sẽ được ghi nhận là kỹ thuật viên phụ trách.</p>
-                        
-                        <form asp-action="Accept" asp-route-id="@Model.IncidentId" method="post">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-primary px-5 py-2.5 shadow-sm">
-                                <i class='bx bx-wrench me-1.5 align-middle fs-5'></i> Tiếp nhận yêu cầu xử lý
-                            </button>
-                        </form>
+                }
+                else
+                {
+                    <div class="card border-0 shadow-sm rounded-3 bg-white h-100">
+                        <div class="card-header bg-primary text-white py-3">
+                            <h5 class="card-title mb-0 fw-bold"><i class='bx bx-check-double me-2 align-middle fs-5'></i>Tiếp nhận sự cố</h5>
+                        </div>
+                        <div class="card-body p-4 d-flex flex-column justify-content-center text-center">
+                            <i class='bx bx-time-five fs-1 text-warning mb-3'></i>
+                            <h6 class="fw-bold">Báo cáo sự cố đang ở trạng thái Chờ tiếp nhận</h6>
+                            <p class="text-muted fs-7 max-width-400 mx-auto mb-4">Để xử lý sự cố này, trước tiên bạn cần Tiếp nhận yêu cầu. Trạng thái của sự cố sẽ chuyển sang **Đang sửa chữa (InProgress)** và bạn sẽ được ghi nhận là kỹ thuật viên phụ trách.</p>
+                            
+                            <form asp-action="Accept" asp-route-id="@Model.IncidentId" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-primary px-5 py-2.5 shadow-sm">
+                                    <i class='bx bx-wrench me-1.5 align-middle fs-5'></i> Tiếp nhận yêu cầu xử lý
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                </div>
+                }
             }
             else if (Model.Status == "InProgress")
             {
