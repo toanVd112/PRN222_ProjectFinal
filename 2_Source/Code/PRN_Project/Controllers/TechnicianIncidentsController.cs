@@ -100,7 +100,8 @@ namespace PRN_Project.Controllers
                 {
                     new() { Value = "Pending", Text = "Chờ tiếp nhận (Pending)" },
                     new() { Value = "InProgress", Text = "Đang xử lý (InProgress)" },
-                    new() { Value = "Resolved", Text = "Đã giải quyết (Resolved)" }
+                    new() { Value = "Resolved", Text = "Đã giải quyết (Resolved)" },
+                    new() { Value = "Cancelled", Text = "Đã hủy (Cancelled)" }
                 }
             };
 

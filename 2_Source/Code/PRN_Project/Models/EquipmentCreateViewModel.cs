@@ -55,6 +55,11 @@ namespace PRN_Project.Models
             {
                 yield return new ValidationResult("Ngày mua không được lớn hơn ngày hiện tại.", new[] { nameof(PurchaseDate) });
             }
+
+            if (PurchaseDate.HasValue && WarrantyExpiry.HasValue && WarrantyExpiry.Value <= PurchaseDate.Value)
+            {
+                yield return new ValidationResult("Hạn bảo hành bắt buộc phải sau ngày mua.", new[] { nameof(WarrantyExpiry) });
+            }
         }
     }
 }

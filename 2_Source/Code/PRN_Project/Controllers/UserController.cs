@@ -119,6 +119,19 @@ namespace PRN_Project.Controllers
                     model.UserCode = model.UserCode.Replace(" ", "").ToUpper();
                 }
 
+                // Xử lý Họ và tên: xóa khoảng trắng đầu cuối, chuẩn hóa khoảng cách giữa các từ
+                if (!string.IsNullOrEmpty(model.FullName))
+                {
+                    model.FullName = model.FullName.Trim();
+                    model.FullName = System.Text.RegularExpressions.Regex.Replace(model.FullName, @"\s+", " ");
+                }
+
+                // Xử lý Email: xóa khoảng trắng đầu cuối
+                if (!string.IsNullOrEmpty(model.Email))
+                {
+                    model.Email = model.Email.Trim();
+                }
+
                 // Validate định danh theo Role
                 if (model.Role == "Lecturer" && !System.Text.RegularExpressions.Regex.IsMatch(model.UserCode, @"^LEC\d+$"))
                 {
@@ -129,6 +142,12 @@ namespace PRN_Project.Controllers
                 else if (model.Role == "Technician" && !System.Text.RegularExpressions.Regex.IsMatch(model.UserCode, @"^TECH\d+$"))
                 {
                     ModelState.AddModelError("UserCode", "Mã Nhân viên phải bắt đầu bằng 'TECH' và theo sau là các chữ số (Ví dụ: TECH01).");
+                    model.AvailableRooms = await GetAvailableRoomsAsync();
+                    return View(model);
+                }
+                else if (model.Role == "Admin" && !System.Text.RegularExpressions.Regex.IsMatch(model.UserCode, @"^ADM\d+$"))
+                {
+                    ModelState.AddModelError("UserCode", "Mã Quản trị viên phải bắt đầu bằng 'ADM' và theo sau là các chữ số (Ví dụ: ADM01).");
                     model.AvailableRooms = await GetAvailableRoomsAsync();
                     return View(model);
                 }
@@ -248,6 +267,12 @@ namespace PRN_Project.Controllers
                     model.UserCode = model.UserCode.Replace(" ", "").ToUpper();
                 }
 
+                // Xử lý Email: xóa khoảng trắng đầu cuối
+                if (!string.IsNullOrEmpty(model.Email))
+                {
+                    model.Email = model.Email.Trim();
+                }
+
                 // Validate định danh theo Role
                 if (model.Role == "Lecturer" && !System.Text.RegularExpressions.Regex.IsMatch(model.UserCode, @"^LEC\d+$"))
                 {
@@ -258,6 +283,12 @@ namespace PRN_Project.Controllers
                 else if (model.Role == "Technician" && !System.Text.RegularExpressions.Regex.IsMatch(model.UserCode, @"^TECH\d+$"))
                 {
                     ModelState.AddModelError("UserCode", "Mã Nhân viên phải bắt đầu bằng 'TECH' và theo sau là các chữ số (Ví dụ: TECH01).");
+                    model.AvailableRooms = await GetAvailableRoomsAsync();
+                    return View(model);
+                }
+                else if (model.Role == "Admin" && !System.Text.RegularExpressions.Regex.IsMatch(model.UserCode, @"^ADM\d+$"))
+                {
+                    ModelState.AddModelError("UserCode", "Mã Quản trị viên phải bắt đầu bằng 'ADM' và theo sau là các chữ số (Ví dụ: ADM01).");
                     model.AvailableRooms = await GetAvailableRoomsAsync();
                     return View(model);
                 }

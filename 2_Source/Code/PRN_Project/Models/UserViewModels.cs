@@ -17,15 +17,16 @@ namespace PRN_Project.Models
     public class CreateUserViewModel
     {
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng nhập Mã người dùng")]
-        [System.ComponentModel.DataAnnotations.StringLength(8, ErrorMessage = "Mã người dùng không vượt quá 8 ký tự")]
+        [System.ComponentModel.DataAnnotations.StringLength(7, ErrorMessage = "Mã người dùng không vượt quá 7 ký tự")]
         public string UserCode { get; set; } = null!;
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng nhập Họ và Tên")]
-        [System.ComponentModel.DataAnnotations.StringLength(150, ErrorMessage = "Họ và Tên không vượt quá 150 ký tự")]
+        [System.ComponentModel.DataAnnotations.StringLength(30, ErrorMessage = "Họ và Tên không vượt quá 30 ký tự")]
         public string FullName { get; set; } = null!;
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng nhập Email")]
         [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[\w\.-]+@cems\.com$", ErrorMessage = "Email bắt buộc phải có đuôi là @cems.com")]
         public string Email { get; set; } = null!;
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng chọn Vai trò")]
@@ -40,11 +41,14 @@ namespace PRN_Project.Models
         public int UserId { get; set; }
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng nhập Mã người dùng")]
-        [System.ComponentModel.DataAnnotations.StringLength(8, ErrorMessage = "Mã người dùng không vượt quá 8 ký tự")]
+        [System.ComponentModel.DataAnnotations.StringLength(7, ErrorMessage = "Mã người dùng không vượt quá 7 ký tự")]
         public string UserCode { get; set; } = null!;
 
         public string? FullName { get; set; } // Chỉ để hiển thị, không post lại
 
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng nhập Email")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^[\w\.-]+@cems\.com$", ErrorMessage = "Email bắt buộc phải có đuôi là @cems.com")]
         public string Email { get; set; } = null!;
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Vui lòng chọn Vai trò")]

@@ -40,6 +40,9 @@ else
                     case "Resolved":
                         <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5"><i class='bx bx-check-circle me-1'></i>Đã giải quyết</span>
                         break;
+                    case "Cancelled":
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2.5 py-1.5"><i class='bx bx-x-circle me-1'></i>Đã hủy</span>
+                        break;
                     default:
                         <span class="badge bg-light text-dark border px-2.5 py-1.5">@item.Status</span>
                         break;
@@ -62,7 +65,7 @@ else
                             <i class='bx bx-check-double me-1 align-middle'></i> <span>Tiếp nhận</span>
                         }
                     }
-                    else if (item.Status == "Resolved")
+                    else if (item.Status == "Resolved" || item.Status == "Cancelled")
                     {
                         <i class='bx bx-info-circle me-1 align-middle'></i> <span>Chi tiết</span>
                     }
