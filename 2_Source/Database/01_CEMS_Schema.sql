@@ -318,7 +318,8 @@ CREATE TABLE Notifications (
                             CHECK (Type IN (
                                 'IncidentReported', 'IncidentResolved',
                                 'PasswordReset', 'WarrantyExpiry',
-                                'DisposalProposed', 'DisposalDecided', 'IncidentAssigned'
+                                'DisposalProposed', 'DisposalDecided', 'IncidentAssigned',
+                                'TransferProposed', 'TransferApproved', 'TransferRejected'
                             )),
     IsRead              BIT             NOT NULL DEFAULT 0,
     SentAt              DATETIME2(0)    NOT NULL DEFAULT GETDATE(),
@@ -619,4 +620,32 @@ BEGIN
         WHERE ISNULL(i.WarrantyExpiry, '1900-01-01') != ISNULL(d.WarrantyExpiry, '1900-01-01');
     END
 END;
+GO
+
+-- ==============================================================================
+-- CẬP NHẬT RÀNG BUỘC CHO DATABASE CŨ (Dành cho các thành viên chưa update db)
+-- ==============================================================================
+DECLARE @ConstraintName nvarchar(200);
+SELECT @ConstraintName = Name
+FROM sys.check_constraints
+WHERE parent_object_id = OBJECT_ID('Notifications')
+AND definition LIKE '%IncidentReported%';
+
+IF @ConstraintName IS NOT NULL
+BEGIN
+    DECLARE @SQL nvarchar(1000);
+    SET @SQL = 'ALTER TABLE Notifications DROP CONSTRAINT ' + @ConstraintName;
+    EXEC(@SQL);
+    PRINT 'Dropped old constraint: ' + @ConstraintName;
+END
+GO
+
+ALTER TABLE Notifications
+ADD CONSTRAINT CK_Notifications_Type CHECK (Type IN (
+    'IncidentReported', 'IncidentResolved',
+    'PasswordReset', 'WarrantyExpiry',
+    'DisposalProposed', 'DisposalDecided', 'IncidentAssigned',
+    'TransferProposed', 'TransferApproved', 'TransferRejected'
+));
+PRINT 'Added new constraint CK_Notifications_Type';
 GO
